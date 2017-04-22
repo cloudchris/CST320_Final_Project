@@ -1,8 +1,3 @@
-//--------------------------------------------------------------------------------------
-// File: lecture 8.fx
-//
-// Copyright (c) Microsoft Corporation. All rights reserved.
-//--------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------------
 // Constant Buffer Variables
@@ -68,19 +63,12 @@ float4 PS( PS_INPUT input) : SV_Target
 {
 float4 texture_color = txDiffuse.Sample(samLinear, input.Tex);
 float4 color = texture_color;
-// Phong relfection is ambient + light-diffuse + spec highlights.
-// I = Ia*ka*Oda + fatt*Ip[kd*Od(N.L) + ks(R.V)^n]
-// Ref: http://www.whisqu.se/per/docs/graphics8.htm
-// and http://en.wikipedia.org/wiki/Phong_shading
-// Get light direction for this fragment
-float3 LightPosition = float3(1000, 1000, 1000);
+
+float3 LightPosition = float3(0, 30, 10);
 float3 lightDir = normalize(input.WorldPos - LightPosition);
 
 // Note: Non-uniform scaling not supported
 float diffuseLighting = saturate(dot(input.Norm, -lightDir)); // per pixel diffuse lighting
-float LightDistanceSquared = 3000000;
-															// Introduce fall-off of light intensity
-diffuseLighting *= (LightDistanceSquared / dot(LightPosition - input.WorldPos, LightPosition - input.WorldPos));
 
 
 
@@ -88,14 +76,8 @@ diffuseLighting *= (LightDistanceSquared / dot(LightPosition - input.WorldPos, L
 float3 h = normalize(normalize(-CameraPos.xyz - input.WorldPos) - lightDir);
 float SpecularPower = 15;
 float specLighting = pow(saturate(dot(h, input.Norm)), SpecularPower);
-float3 AmbientLightColor = float3(1, 1, 1)*0.01;
-float3 SpecularColor = float3(1, 1, 1);
-	color = (saturate(
-	//AmbientLightColor +
-	(texture_color *  diffuseLighting * 0.6) + // Use light diffuse vector as intensity multiplier
-	(SpecularColor * specLighting * 0.5) // Use light specular vector as intensity multiplier
-	), 1);
-	//color.rgb = diffuseLighting;
-	color.rgb = texture_color * diffuseLighting + specLighting;
+
+color.rgb = texture_color * diffuseLighting;
+
 return color;
 }

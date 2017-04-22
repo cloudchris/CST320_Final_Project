@@ -1,10 +1,4 @@
-//--------------------------------------------------------------------------------------
-// File: lecture 8.cpp
-//
-// This application demonstrates texturing
-//
-// Copyright (c) Microsoft Corporation. All rights reserved.
-//--------------------------------------------------------------------------------------
+
 #include "groundwork.h"
 
 
@@ -54,6 +48,12 @@ XMFLOAT4                            g_vMeshColor( 0.7f, 0.7f, 0.7f, 1.0f );
 
 camera								cam;
 level								level1;
+level								bottom;
+level								top;
+level								rightSide;
+level								leftSide;
+level								front;
+level								back;
 vector<billboard*>					smokeray;
 XMFLOAT3							rocket_position;
 #define ROCKETRADIUS				10
@@ -343,11 +343,37 @@ HRESULT InitDevice()
 	
 	
     // Create vertex buffer
-	SimpleVertex *vertices=new SimpleVertex[500 * 500 * 6];
+	SimpleVertex vertices[] =
+	{
+		{ XMFLOAT3(1, -1, 0), XMFLOAT2(1, 0), XMFLOAT3(0, 0, 1) },
+		{ XMFLOAT3(1, 1, 0), XMFLOAT2(1, 1), XMFLOAT3(0, 0, 1) },
+		{ XMFLOAT3(-1, -1, 0), XMFLOAT2(0, 0), XMFLOAT3(0, 0, 1) },
+
+		{ XMFLOAT3(-1, -1, 0), XMFLOAT2(0, 0), XMFLOAT3(0, 0, 1) },
+		{ XMFLOAT3(1, 1, 0), XMFLOAT2(1, 1), XMFLOAT3(0, 0, 1) },
+		{ XMFLOAT3(-1, 1, 0), XMFLOAT2(0, 1), XMFLOAT3(0, 0, 1) },
+
+		{ XMFLOAT3(1, -1, 0), XMFLOAT2(1, 0), XMFLOAT3(0, 0, -1) },
+		{ XMFLOAT3(-1, -1, 0), XMFLOAT2(0, 0), XMFLOAT3(0, 0, -1) },
+		{ XMFLOAT3(1, 1, 0), XMFLOAT2(1, 1), XMFLOAT3(0, 0, -1) },
+
+		{ XMFLOAT3(1, 1, 0), XMFLOAT2(1, 1), XMFLOAT3(0, 0, -1) },
+		{ XMFLOAT3(-1, -1, 0), XMFLOAT2(0, 0), XMFLOAT3(0, 0, -1) },
+		{ XMFLOAT3(-1, 1, 0), XMFLOAT2(0, 1), XMFLOAT3(0, 0, -1) }
+	};
 	
 
 	D3D11_BUFFER_DESC bd;
     ZeroMemory( &bd, sizeof(bd) );
+	bd.ByteWidth = sizeof(SimpleVertex) * 12;
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bd.StructureByteStride = sizeof(SimpleVertex);
+	D3D11_SUBRESOURCE_DATA InitData =
+	{
+		vertices, 0, 0
+	};
+	hr = g_pd3dDevice->CreateBuffer(&bd, &InitData, &g_pVertexBuffer);
    
 	//load model 3ds file
 
@@ -460,11 +486,48 @@ HRESULT InitDevice()
 	g_pd3dDevice->CreateDepthStencilState(&DS_ON, &ds_on);
 	g_pd3dDevice->CreateDepthStencilState(&DS_OFF, &ds_off);
 
-	level1.init("level.bmp");
+	level1.init("level1.bmp");
 	level1.init_texture(g_pd3dDevice, L"wall1.jpg");
 	level1.init_texture(g_pd3dDevice, L"wall2.jpg");
 	level1.init_texture(g_pd3dDevice, L"floor.jpg");
 	level1.init_texture(g_pd3dDevice, L"ceiling.jpg");
+
+	bottom.init("Bottom.bmp");
+	bottom.init_texture(g_pd3dDevice, L"wall1.jpg");
+	bottom.init_texture(g_pd3dDevice, L"wall2.jpg");
+	bottom.init_texture(g_pd3dDevice, L"floor.jpg");
+	bottom.init_texture(g_pd3dDevice, L"ceiling.jpg");
+
+	top.init("Top.bmp");
+	top.init_texture(g_pd3dDevice, L"wall1.jpg");
+	top.init_texture(g_pd3dDevice, L"wall2.jpg");
+	top.init_texture(g_pd3dDevice, L"floor.jpg");
+	top.init_texture(g_pd3dDevice, L"ceiling.jpg");
+
+
+	rightSide.init("Right.bmp");
+	rightSide.init_texture(g_pd3dDevice, L"wall1.jpg");
+	rightSide.init_texture(g_pd3dDevice, L"wall2.jpg");
+	rightSide.init_texture(g_pd3dDevice, L"floor.jpg");
+	rightSide.init_texture(g_pd3dDevice, L"ceiling.jpg");
+
+	leftSide.init("Left.bmp");
+	leftSide.init_texture(g_pd3dDevice, L"wall1.jpg");
+	leftSide.init_texture(g_pd3dDevice, L"wall2.jpg");
+	leftSide.init_texture(g_pd3dDevice, L"floor.jpg");
+	leftSide.init_texture(g_pd3dDevice, L"ceiling.jpg");
+
+	front.init("Front.bmp");
+	front.init_texture(g_pd3dDevice, L"wall1.jpg");
+	front.init_texture(g_pd3dDevice, L"wall2.jpg");
+	front.init_texture(g_pd3dDevice, L"floor.jpg");
+	front.init_texture(g_pd3dDevice, L"ceiling.jpg");
+
+	back.init("Back.bmp");
+	back.init_texture(g_pd3dDevice, L"wall1.jpg");
+	back.init_texture(g_pd3dDevice, L"wall2.jpg");
+	back.init_texture(g_pd3dDevice, L"floor.jpg");
+	back.init_texture(g_pd3dDevice, L"ceiling.jpg");
 	
 	rocket_position = XMFLOAT3(0, 0, ROCKETRADIUS);
 
@@ -847,8 +910,24 @@ UINT offset = 0;
 	worldmatrix = XMMatrixIdentity();
 	//XMMATRIX S, T, R, R2;
 	//worldmatrix = .... probably define some other matrices here!
-	
-	
+
+	g_pImmediateContext->VSSetShader(g_pVertexShader, NULL, 0);
+	g_pImmediateContext->PSSetShader(g_pPixelShader, NULL, 0);
+	g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pCBuffer);
+	g_pImmediateContext->PSSetConstantBuffers(0, 1, &g_pCBuffer);
+	g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureRV);
+	g_pImmediateContext->VSSetShaderResources(0, 1, &g_pTextureRV);
+	g_pImmediateContext->PSSetSamplers(0, 1, &g_pSamplerLinear);
+	g_pImmediateContext->VSSetSamplers(0, 1, &g_pSamplerLinear);
+
+	//level1.render_level(g_pImmediateContext, g_pVertexBuffer, &view, &g_Projection, g_pCBuffer);
+	bottom.render_level(g_pImmediateContext, g_pVertexBuffer, &view, &g_Projection, g_pCBuffer);
+	top.render_level(g_pImmediateContext, g_pVertexBuffer, &view, &g_Projection, g_pCBuffer);
+	rightSide.render_level(g_pImmediateContext, g_pVertexBuffer, &view, &g_Projection, g_pCBuffer);
+	leftSide.render_level(g_pImmediateContext, g_pVertexBuffer, &view, &g_Projection, g_pCBuffer);
+	front.render_level(g_pImmediateContext, g_pVertexBuffer, &view, &g_Projection, g_pCBuffer);
+	back.render_level(g_pImmediateContext, g_pVertexBuffer, &view, &g_Projection, g_pCBuffer);
+
 	//static billboard bill;
 	//animate_rocket(elapsed);
 	//bill.position = rocket_position;
@@ -872,10 +951,6 @@ UINT offset = 0;
 	XMMATRIX RY2 = XMMatrixRotationY(enemy.angle);
 	XMMATRIX T2 = XMMatrixTranslation(enemy.position.x, enemy.position.y, enemy.position.z);
 	XMMATRIX M2 = S2*R2*RY3*RY4*RY2*T2;
-
-
-
-
 
 	constantbuffer2.World = XMMatrixTranspose(M2);
 	g_pImmediateContext->UpdateSubresource(g_pCBuffer, 0, NULL, &constantbuffer2, 0, 0);
@@ -936,4 +1011,3 @@ UINT offset = 0;
     //
     g_pSwapChain->Present( 0, 0 );
 }
-

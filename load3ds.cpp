@@ -1,3 +1,4 @@
+
 #include "groundwork.h"
 
 bool similar_pos(XMFLOAT3 a, XMFLOAT3 b,float crit)
@@ -511,3 +512,4 @@ bool LoadOBJ(char * filename, ID3D11Device * g_pd3dDevice, ID3D11Buffer ** ppVer
 	Vertices = 0;
 	return true;
 	}
+	
