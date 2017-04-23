@@ -375,6 +375,7 @@
   <ItemGroup>
     <ClCompile Include="homework 4.cpp" />
     <ClCompile Include="load3ds.cpp" />
+    <ClCompile Include="sound.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shader.fx" />
@@ -382,6 +383,7 @@
   <ItemGroup>
     <ClInclude Include="groundwork.h" />
     <CLInclude Include="resource.h" />
+    <ClInclude Include="sound.h" />
     <ResourceCompile Include="homework 8.rc" />
   </ItemGroup>
   <ItemGroup>

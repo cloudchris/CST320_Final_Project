@@ -16,12 +16,14 @@
   <ItemGroup>
     <ClCompile Include="homework 4.cpp" />
     <ClCompile Include="load3ds.cpp" />
+    <ClCompile Include="sound.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CLInclude Include="resource.h">
       <Filter>Resource Files</Filter>
     </CLInclude>
     <ClInclude Include="groundwork.h" />
+    <ClInclude Include="sound.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shader.fx">
