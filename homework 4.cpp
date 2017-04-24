@@ -1312,10 +1312,26 @@ UINT offset = 0;
 	//Display the User HUD
 	DisplayHUD(stride, offset);
 
+	if (bull != NULL)
+	{
+		ConstantBuffer constantbuffer;
+		worldmatrix = bull->getmatrix(elapsed, view);
+		g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureBull);
+		constantbuffer.World = XMMatrixTranspose(worldmatrix);
+		constantbuffer.View = XMMatrixTranspose(view);
+		constantbuffer.Projection = XMMatrixTranspose(g_Projection);
+		constantbuffer.info = XMFLOAT4(1, 1, 1, 1);
+		g_pImmediateContext->UpdateSubresource(g_pCBuffer, 0, NULL, &constantbuffer, 0, 0);
+		g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer, &stride, &offset);
+
+		g_pImmediateContext->Draw(12, 0);
+	}
 
 	if (player_health <= 0.0) {
 		PostQuitMessage(0);
 	}
+
+
 
 
 	//
