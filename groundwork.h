@@ -76,9 +76,19 @@ public:
 billboard()
 {
 x = y = z = r = 0;
-position = XMFLOAT3(2, -4, 15);
+position = XMFLOAT3(x, y, z);
 scale = 1;
 transparency = 1;
+}
+void setPosition(float xin, float yin, float zin)
+{
+	x = xin;
+	y = yin;
+	z = zin;
+	r = 0;
+	position = XMFLOAT3(xin, yin, zin);
+	scale = 1;
+	transparency = 1;
 }
 XMFLOAT3 position; //obvious
 float angle;
@@ -93,7 +103,7 @@ void enemyanimation(int px,  int py, int pz, float elapsed_microseconds)
 
 
 int distancex = px - position.x;
-int distancey = py - position.y;
+int distancez = py - position.z;
 float speed = .1;
 if (distancex > 0) {
 position.x += speed;
@@ -101,11 +111,11 @@ position.x += speed;
 position.x -= speed;
 }
 
-if (distancey > 0) {
-position.y += speed;
+if (distancez > 0) {
+position.z += speed;
 }
-else if (distancey < 0) {
-position.y -= speed;
+else if (distancez < 0) {
+position.z -= speed;
 }
 
 
