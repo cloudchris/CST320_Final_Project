@@ -36,8 +36,9 @@ ID3D11Buffer*                       g_pVertexBuffer_ = NULL;
 ID3D11Buffer*                       g_pVertexBuffer_3ds = NULL;
 
 static billboard enemy, ammodrop;
-
-float									player_health = 1.0;
+float								player_lives = 5.0;
+float								player_health = 1.0;
+float								enemy_health = 1.0;
 int									model_vertex_anz = 0;
 int									enemy_vertex_anz = 1;
 int									health_vertex_anz = 2;
@@ -56,6 +57,7 @@ music_								music;
 ID3D11ShaderResourceView*           g_pTextureRV = NULL;
 ID3D11ShaderResourceView*           g_pTextureA = NULL;
 ID3D11ShaderResourceView*			g_pTextureammodrop = NULL;
+ID3D11ShaderResourceView*			g_pTextureBull = NULL;
 ID3D11RasterizerState				*rs_CW, *rs_CCW, *rs_NO, *rs_Wire;
 
 ID3D11SamplerState*                 g_pSamplerLinear = NULL;
@@ -443,6 +445,11 @@ HRESULT InitDevice()
 	if (FAILED(hr))
 		return hr;
 
+	// Load the Texture
+	hr = D3DX11CreateShaderResourceViewFromFile(g_pd3dDevice, L"smoke.dds", NULL, NULL, &g_pTextureBull, NULL);
+	if (FAILED(hr))
+		return hr;
+
     // Create the sample state
     D3D11_SAMPLER_DESC sampDesc;
     ZeroMemory( &sampDesc, sizeof(sampDesc) );
@@ -600,6 +607,7 @@ void CleanupDevice()
 
     if( g_pSamplerLinear ) g_pSamplerLinear->Release();
     if( g_pTextureRV ) g_pTextureRV->Release();
+	if (g_pTextureBull) g_pTextureBull->Release();
 	if (g_pTextureA) g_pTextureA->Release();
 	if (g_pTextureammodrop) g_pTextureammodrop->Release();
     if(g_pCBuffer) g_pCBuffer->Release();
@@ -621,7 +629,7 @@ bullet *bull = NULL;
 void OnLBD(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT keyFlags)
 	{
 	if (player_ammo_current > 0) {
-		//Shhot buller in here.
+		//Shhot bullet in here.
 		music.play_fx("gunshot.mp3");
 		bull = new bullet;
 		bull->pos.x = -cam.position.x;
@@ -1135,6 +1143,8 @@ UINT offset = 0;
 	//animate_rocket(elapsed);
 	//bill.position = rocket_position;
 	//worldmatrix = bill.get_matrix(view);
+	
+	
 	ConstantBuffer constantbuffer2;
 	constantbuffer2.View = XMMatrixTranspose(view);
 	constantbuffer2.Projection = XMMatrixTranspose(g_Projection);
@@ -1208,6 +1218,24 @@ UINT offset = 0;
 	g_pImmediateContext->OMSetDepthStencilState(ds_on, 1);
 	g_pImmediateContext->Draw(model_vertex_anz, 0);
     
+
+	if (bull != NULL)
+	{
+		ConstantBuffer constantbufferbull;
+		worldmatrix = bull->getmatrix(elapsed, view);
+		g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureBull);
+		constantbufferbull.World = XMMatrixTranspose(worldmatrix);
+		constantbufferbull.View = XMMatrixTranspose(view);
+		constantbufferbull.Projection = XMMatrixTranspose(g_Projection);
+		constantbufferbull.info = XMFLOAT4(1, 1, 1, 1);
+		g_pImmediateContext->UpdateSubresource(g_pCBuffer, 0, NULL, &constantbufferbull, 0, 0);
+
+		g_pImmediateContext->Draw(12, 0);
+	}
+
+
+	g_pImmediateContext->OMSetDepthStencilState(ds_on, 1);
+
 	//Display ammo on hud
 	float x = -1.0;
 	float y = -0.2;
@@ -1223,13 +1251,19 @@ UINT offset = 0;
 
 	Health(stride, offset, -1.0, 0.0);
 
-	if (cam.position.x == enemy.position.x && cam.position.z == enemy.position.z) {
-		player_health -= 0.1;
+	if (cam.position.x == enemy.position.x &&  cam.position.y == enemy.position.z && cam.position.z == enemy.position.z) {
+		player_health = 0.0;
 	}
 
 	if (player_health <= 0.0) {
-		PostQuitMessage(0);
+		player_lives -= 1.0;
+		player_health = 1.0;
+
+		if (player_lives == 0)
+			PostQuitMessage(0);
 	}
+
+
 
 	//
     // Present our back buffer to our front buffer
