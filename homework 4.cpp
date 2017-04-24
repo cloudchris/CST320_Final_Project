@@ -948,14 +948,17 @@ void animate_rocket(float elapsed_microseconds)
 
 
 
+
+
+
 void ShowAmmo(UINT stride, UINT offset, float x, float y) {
 	XMMATRIX view = cam.get_matrix(&g_View);
 
-	 // Update skybox constant buffer
-    ConstantBuffer constantbuffer;
+	// Update skybox constant buffer
+	ConstantBuffer constantbuffer;
 	constantbuffer.View = XMMatrixTranspose(view);
 	constantbuffer.Projection = XMMatrixTranspose(g_Projection);
-	//constantbuffer.CameraPos = XMFLOAT4(cam.position.x, cam.position.y, cam.position.z, 1);
+	constantbuffer.CameraPos = XMFLOAT4(cam.position.x, cam.position.y, cam.position.z, 1);
 	//render model:
 	float scale = 0.001;
 	XMMATRIX S = XMMatrixScaling(scale, scale, scale);
@@ -975,9 +978,9 @@ void ShowAmmo(UINT stride, UINT offset, float x, float y) {
 
 	constantbuffer.World = XMMatrixTranspose(M);
 	g_pImmediateContext->UpdateSubresource(g_pCBuffer, 0, NULL, &constantbuffer, 0, 0);
-	
-	
-// Render terrain
+
+
+	// Render terrain
 	g_pImmediateContext->VSSetShader(g_pVertexShader, NULL, 0);
 	g_pImmediateContext->PSSetShader(g_pPixelShader, NULL, 0);
 	g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pCBuffer);
@@ -994,7 +997,7 @@ void ShowAmmo(UINT stride, UINT offset, float x, float y) {
 
 
 void DropAmmo(UINT stride, UINT offset, float x, float y, float z) {
-	
+
 	ammodrop.setPosition(x, y, z);
 
 
@@ -1003,6 +1006,7 @@ void DropAmmo(UINT stride, UINT offset, float x, float y, float z) {
 	ConstantBuffer constantbuffer2;
 	constantbuffer2.View = XMMatrixTranspose(view);
 	constantbuffer2.Projection = XMMatrixTranspose(g_Projection);
+	constantbuffer2.CameraPos = XMFLOAT4(cam.position.x, cam.position.y, cam.position.z, 1);
 
 	//animate_rocket(elapsed);ssssssssss
 	//worldmatrix = enemy.get_matrix_y(view);
@@ -1040,10 +1044,10 @@ void playerHealth(UINT stride, UINT offset, float x, float y) {
 	ConstantBuffer constantbuffer;
 	constantbuffer.View = XMMatrixTranspose(view);
 	constantbuffer.Projection = XMMatrixTranspose(g_Projection);
-	//constantbuffer.CameraPos = XMFLOAT4(cam.position.x, cam.position.y, cam.position.z, 1);
+	constantbuffer.CameraPos = XMFLOAT4(cam.position.x, cam.position.y, cam.position.z, 1);
 	//render model:
-	float scale = player_health/100;
-	XMMATRIX S = XMMatrixScaling(scale, scale/2, scale/2);
+	float scale = player_health / 100;
+	XMMATRIX S = XMMatrixScaling(scale, scale / 2, scale / 2);
 
 
 	//S = XMMatrixScaling(10, 10, 10);
@@ -1115,6 +1119,105 @@ void enemyHealth(UINT stride, UINT offset, float x, float y) {
 	g_pImmediateContext->OMSetDepthStencilState(ds_on, 1);
 	g_pImmediateContext->Draw(ammo_vertex_anz, 0);
 }
+
+void CreateEnemy(UINT stride, UINT offset, float x, float y, float z) {
+	XMMATRIX view = cam.get_matrix(&g_View);
+	ConstantBuffer constantbuffer2;
+	constantbuffer2.View = XMMatrixTranspose(view);
+	constantbuffer2.Projection = XMMatrixTranspose(g_Projection);
+	constantbuffer2.CameraPos = XMFLOAT4(cam.position.x, cam.position.y, cam.position.z, 1);
+
+	//animate_rocket(elapsed);ssssssssss
+	XMMATRIX S2 = XMMatrixScaling(0.005, 0.005, 0.005);
+
+
+	//S = XMMatrixScaling(10, 10, 10);
+
+	XMMATRIX R2 = XMMatrixRotationX(-XM_PIDIV2);
+	XMMATRIX RY3 = XMMatrixRotationY(XM_PI);
+	XMMATRIX RY4 = XMMatrixRotationY(-XM_PIDIV2);
+	XMMATRIX RY2 = XMMatrixRotationY(enemy.angle);
+	XMMATRIX T2 = XMMatrixTranslation(enemy.position.x, enemy.position.y, enemy.position.z);
+	XMMATRIX M2 = S2*R2*RY3*RY4*RY2*T2;
+
+	constantbuffer2.World = XMMatrixTranspose(M2);
+	g_pImmediateContext->UpdateSubresource(g_pCBuffer, 0, NULL, &constantbuffer2, 0, 0);
+
+	g_pImmediateContext->VSSetShader(g_pVertexShader, NULL, 0);
+	g_pImmediateContext->PSSetShader(g_pPixelShader, NULL, 0);
+	g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pCBuffer);
+	g_pImmediateContext->PSSetConstantBuffers(0, 1, &g_pCBuffer);
+	g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureRV);
+	g_pImmediateContext->VSSetShaderResources(0, 1, &g_pTextureRV);
+	g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer_enemy, &stride, &offset);
+	g_pImmediateContext->PSSetSamplers(0, 1, &g_pSamplerLinear);
+	g_pImmediateContext->VSSetSamplers(0, 1, &g_pSamplerLinear);
+	g_pImmediateContext->Draw(enemy_vertex_anz, 0);
+	g_pImmediateContext->OMSetDepthStencilState(ds_off, 1);
+}
+//*******************************************************
+void GenUserGun(UINT stride, UINT offset) {
+	XMMATRIX view = cam.get_matrix(&g_View);
+
+	// Update skybox constant buffer
+	ConstantBuffer constantbuffer;
+	constantbuffer.View = XMMatrixTranspose(view);
+	constantbuffer.Projection = XMMatrixTranspose(g_Projection);
+	constantbuffer.CameraPos = XMFLOAT4(cam.position.x, cam.position.y, cam.position.z, 1);
+	//render model:
+	XMMATRIX S = XMMatrixScaling(0.001, 0.001, 0.001);
+
+
+	S = XMMatrixScaling(0.1, 0.1, 0.1);
+	//S = XMMatrixScaling(10, 10, 10);
+	XMMATRIX T, R, M, T_off;
+	T = XMMatrixTranslation(-cam.position.x, -cam.position.y, -cam.position.z);
+	T_off = XMMatrixTranslation(0.4, -0.4, 1.3);		//OFFSET FROM THE CENTER
+	R = XMMatrixRotationY(-XM_PIDIV2);
+	XMMATRIX Rx = XMMatrixRotationX(-cam.rotation.x);
+	XMMATRIX Ry = XMMatrixRotationY(-cam.rotation.y);
+	XMMATRIX Rxx = XMMatrixRotationZ(.1);			//NOT SURE WHAT YOU WANT TO DO HERE
+	XMMATRIX R_gun = Rxx*Rx*Ry;
+	M = S*R*T_off*R_gun*T;
+
+
+	constantbuffer.World = XMMatrixTranspose(M);
+	g_pImmediateContext->UpdateSubresource(g_pCBuffer, 0, NULL, &constantbuffer, 0, 0);
+
+
+	// Render terrain
+	g_pImmediateContext->VSSetShader(g_pVertexShader, NULL, 0);
+	g_pImmediateContext->PSSetShader(g_pPixelShader, NULL, 0);
+	g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pCBuffer);
+	g_pImmediateContext->PSSetConstantBuffers(0, 1, &g_pCBuffer);
+	g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureRV);
+	g_pImmediateContext->VSSetShaderResources(0, 1, &g_pTextureRV);
+	g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer_3ds, &stride, &offset);
+	g_pImmediateContext->PSSetSamplers(0, 1, &g_pSamplerLinear);
+	g_pImmediateContext->VSSetSamplers(0, 1, &g_pSamplerLinear);
+
+	g_pImmediateContext->OMSetDepthStencilState(ds_on, 1);
+	g_pImmediateContext->Draw(model_vertex_anz, 0);
+
+}
+
+void DisplayHUD(UINT stride, UINT offset) {
+	//Display ammo on hud
+	float x = -1.0;
+	float y = -0.2;
+	for (int i = 0; i < player_ammo_current; i++) {
+		if (i == 4) {
+			y = -0.4;
+			x = -1.0;
+		}
+
+		ShowAmmo(stride, offset, x, y);
+		x += 0.05;
+	}
+
+	playerHealth(stride, offset, -1.0, 0.0);
+}
+
 //*******************************************************
 
 void Render()
@@ -1139,6 +1242,7 @@ UINT offset = 0;
 
 	cam.animation(elapsed);
 	enemy.enemyanimation(-cam.position.x, -cam.position.y, -cam.position.z, elapsed * 2);
+	ammodrop.ammodropanimation(-cam.position.x, -cam.position.y, -cam.position.z, elapsed * 2);
 	XMMATRIX view = cam.get_matrix(&g_View);
 
 	XMMATRIX Iview = view;
@@ -1172,140 +1276,32 @@ UINT offset = 0;
 
 
 
+	//Create ammo drop
 	worldmatrix = ammodrop.get_matrix_y(view);
 	DropAmmo(stride, offset, 1, -1, 5);
-	
 
-	if (ammodrop.position.x == cam.position.x && ammodrop.position.z == cam.position.z) {
+
+	//Create enemy
+	worldmatrix = enemy.get_matrix_y(view);
+	CreateEnemy(stride, offset, 1, -1, 1);
+
+	//Generate User Gun
+	GenUserGun(stride, offset);
+
+	//Display the User HUD
+	DisplayHUD(stride, offset);
+
+	if (ammodrop.refill) {
 		player_ammo_total += 8;
 	}
 
-	static billboard bill;
-	//animate_rocket(elapsed);
-	//bill.position = rocket_position;
-	//worldmatrix = bill.get_matrix(view);
-	
-	
-	ConstantBuffer constantbuffer2;
-	constantbuffer2.View = XMMatrixTranspose(view);
-	constantbuffer2.Projection = XMMatrixTranspose(g_Projection);
-	
-	//animate_rocket(elapsed);ssssssssss
-	worldmatrix = enemy.get_matrix_y(view);
-	XMMATRIX S2 = XMMatrixScaling(0.001, 0.001, 0.001);
-
-
-	//S = XMMatrixScaling(10, 10, 10);
-
-	XMMATRIX R2 = XMMatrixRotationX(-XM_PIDIV2);
-	XMMATRIX RY3 = XMMatrixRotationY(XM_PI);
-	XMMATRIX RY4 = XMMatrixRotationY(-XM_PIDIV2);
-	XMMATRIX RY2 = XMMatrixRotationY(enemy.angle);
-	XMMATRIX T2 = XMMatrixTranslation(enemy.position.x, enemy.position.y, enemy.position.z);
-	XMMATRIX M2 = S2*R2*RY3*RY4*RY2*T2;
-
-	constantbuffer2.World = XMMatrixTranspose(M2);
-	g_pImmediateContext->UpdateSubresource(g_pCBuffer, 0, NULL, &constantbuffer2, 0, 0);
-
-	g_pImmediateContext->VSSetShader(g_pVertexShader, NULL, 0);
-	g_pImmediateContext->PSSetShader(g_pPixelShader, NULL, 0);
-	g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pCBuffer);
-	g_pImmediateContext->PSSetConstantBuffers(0, 1, &g_pCBuffer);
-	g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureRV);
-	g_pImmediateContext->VSSetShaderResources(0, 1, &g_pTextureRV);
-	g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer_enemy, &stride, &offset);
-	g_pImmediateContext->PSSetSamplers(0, 1, &g_pSamplerLinear);
-	g_pImmediateContext->VSSetSamplers(0, 1, &g_pSamplerLinear);
-	g_pImmediateContext->Draw(enemy_vertex_anz, 0);
-	g_pImmediateContext->OMSetDepthStencilState(ds_off, 1);
-
-    // Update skybox constant buffer
-    ConstantBuffer constantbuffer;
-	constantbuffer.View = XMMatrixTranspose(view);
-	constantbuffer.Projection = XMMatrixTranspose(g_Projection);
-	//constantbuffer.CameraPos = XMFLOAT4(cam.position.x, cam.position.y, cam.position.z, 1);
-	//render model:
-	XMMATRIX S = XMMatrixScaling(0.001, 0.001, 0.001);
-
-
-	S = XMMatrixScaling(0.1, 0.1, 0.1);
-	//S = XMMatrixScaling(10, 10, 10);
-	XMMATRIX T, R, M, T_off;
-	T = XMMatrixTranslation(-cam.position.x, -cam.position.y, -cam.position.z);
-	T_off = XMMatrixTranslation(0.4, -0.4, 1.3);		//OFFSET FROM THE CENTER
-	R = XMMatrixRotationY(-XM_PIDIV2);
-	XMMATRIX Rx = XMMatrixRotationX(-cam.rotation.x);
-	XMMATRIX Ry = XMMatrixRotationY(-cam.rotation.y);
-	XMMATRIX Rxx = XMMatrixRotationZ(.1);			//NOT SURE WHAT YOU WANT TO DO HERE
-	XMMATRIX R_gun = Rxx*Rx*Ry;
-	M = S*R*T_off*R_gun*T;
-
-
-	constantbuffer.World = XMMatrixTranspose(M);
-	g_pImmediateContext->UpdateSubresource(g_pCBuffer, 0, NULL, &constantbuffer, 0, 0);
-	
-	
-// Render terrain
-	g_pImmediateContext->VSSetShader(g_pVertexShader, NULL, 0);
-	g_pImmediateContext->PSSetShader(g_pPixelShader, NULL, 0);
-	g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pCBuffer);
-	g_pImmediateContext->PSSetConstantBuffers(0, 1, &g_pCBuffer);
-	g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureRV);
-	g_pImmediateContext->VSSetShaderResources(0, 1, &g_pTextureRV);
-	g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer_3ds, &stride, &offset);
-	g_pImmediateContext->PSSetSamplers(0, 1, &g_pSamplerLinear);
-	g_pImmediateContext->VSSetSamplers(0, 1, &g_pSamplerLinear);
-
-	g_pImmediateContext->OMSetDepthStencilState(ds_on, 1);
-	g_pImmediateContext->Draw(model_vertex_anz, 0);
-    
-
-	if (bull != NULL)
-	{
-		ConstantBuffer constantbufferbull;
-		worldmatrix = bull->getmatrix(elapsed, view);
-		g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureBull);
-		constantbufferbull.World = XMMatrixTranspose(worldmatrix);
-		constantbufferbull.View = XMMatrixTranspose(view);
-		constantbufferbull.Projection = XMMatrixTranspose(g_Projection);
-		constantbufferbull.info = XMFLOAT4(1, 1, 1, 1);
-		g_pImmediateContext->UpdateSubresource(g_pCBuffer, 0, NULL, &constantbufferbull, 0, 0);
-
-		g_pImmediateContext->Draw(12, 0);
-	}
-
-
-	g_pImmediateContext->OMSetDepthStencilState(ds_on, 1);
-
-	//Display ammo on hud
-	float x = -1.0;
-	float y = -0.2;
-	for (int i = 0; i < player_ammo_current; i++) {
-		if (i == 4) {
-			y = -0.4;
-			x = -1.0;
-		}
-
-		ShowAmmo(stride, offset, x, y);
-		x += 0.05;
-	}
-
-	playerHealth(stride, offset, -1.0, 0.0);
-
-	enemyHealth(stride, offset, 0.0, 0.5);
-
-	if (cam.position.x == enemy.position.x &&  cam.position.y == enemy.position.z && cam.position.z == enemy.position.z) {
-		player_health = 0.0;
+	if (enemy.attacking) {
+		player_health -= 0.01;
 	}
 
 	if (player_health <= 0.0) {
-		player_lives -= 1.0;
-		player_health = 1.0;
-
-		if (player_lives == 0)
-			PostQuitMessage(0);
+		PostQuitMessage(0);
 	}
-
 
 
 	//

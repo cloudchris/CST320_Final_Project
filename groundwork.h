@@ -16,24 +16,24 @@ using namespace std;
 
 struct SimpleVertex
 {
-XMFLOAT3 Pos;
-XMFLOAT2 Tex;
-XMFLOAT3 Norm;
+	XMFLOAT3 Pos;
+	XMFLOAT2 Tex;
+	XMFLOAT3 Norm;
 };
 
 
 class ConstantBuffer
 {
 public:
-ConstantBuffer()
-{
-info = XMFLOAT4(1, 1, 1, 1);
-}
-XMMATRIX World;
-XMMATRIX View;
-XMMATRIX Projection;
-XMFLOAT4 info;
-XMFLOAT4 CameraPos;
+	ConstantBuffer()
+	{
+		info = XMFLOAT4(1, 1, 1, 1);
+	}
+	XMMATRIX World;
+	XMMATRIX View;
+	XMMATRIX Projection;
+	XMFLOAT4 info;
+	XMFLOAT4 CameraPos;
 };
 
 
@@ -42,113 +42,139 @@ XMFLOAT4 CameraPos;
 class StopWatchMicro_
 {
 private:
-LARGE_INTEGER last, frequency;
+	LARGE_INTEGER last, frequency;
 public:
-StopWatchMicro_()
-{
-QueryPerformanceFrequency(&frequency);
-QueryPerformanceCounter(&last);
+	StopWatchMicro_()
+	{
+		QueryPerformanceFrequency(&frequency);
+		QueryPerformanceCounter(&last);
 
-}
-long double elapse_micro()
-{
-LARGE_INTEGER now, dif;
-QueryPerformanceCounter(&now);
-dif.QuadPart = now.QuadPart - last.QuadPart;
-long double fdiff = (long double)dif.QuadPart;
-fdiff /= (long double)frequency.QuadPart;
-return fdiff*1000000.;
-}
-long double elapse_milli()
-{
-elapse_micro() / 1000.;
-}
-void start()
-{
-QueryPerformanceCounter(&last);
-}
+	}
+	long double elapse_micro()
+	{
+		LARGE_INTEGER now, dif;
+		QueryPerformanceCounter(&now);
+		dif.QuadPart = now.QuadPart - last.QuadPart;
+		long double fdiff = (long double)dif.QuadPart;
+		fdiff /= (long double)frequency.QuadPart;
+		return fdiff*1000000.;
+	}
+	long double elapse_milli()
+	{
+		elapse_micro() / 1000.;
+	}
+	void start()
+	{
+		QueryPerformanceCounter(&last);
+	}
 };
 //**********************************
 class billboard
 {
-float x,y,z,r;
+	float x, y, z, r;
 public:
-billboard()
-{
-x = y = z = r = 0;
-position = XMFLOAT3(x, y, z);
-scale = 1;
-transparency = 1;
-}
-void setPosition(float xin, float yin, float zin)
-{
-	x = xin;
-	y = yin;
-	z = zin;
-	r = 0;
-	position = XMFLOAT3(xin, yin, zin);
-	scale = 1;
-	transparency = 1;
-}
-XMFLOAT3 position; //obvious
-float angle;
-float scale;		//in case it can grow
-float transparency; //for later use
+	billboard()
+	{
+		x = y = z = r = 0;
+		position = XMFLOAT3(x, y, z);
+		scale = 1;
+		attacking = false;
+		refill = false;
+		transparency = 1;
+	}
+	void setPosition(float xin, float yin, float zin)
+	{
+		x = xin;
+		y = yin;
+		z = zin;
+		r = 0;
+		position = XMFLOAT3(xin, yin, zin);
+		attacking = false;
+		refill = false;
+		scale = 1;
+		transparency = 1;
+	}
+	XMFLOAT3 position; //obvious
+	float angle;
+	bool attacking, refill;
+	float scale;		//in case it can grow
+	float transparency; //for later use
 
-//begining the login
-//Enemy should follow user when within a radius
-void enemyanimation(int px,  int py, int pz, float elapsed_microseconds)
-{
-
-
-
-int distancex = px - position.x;
-int distancez = py - position.z;
-float speed = .1;
-if (distancex > 0) {
-position.x += speed;
-}else if (distancex < 0){
-position.x -= speed;
-}
-
-if (distancez > 0) {
-position.z += speed;
-}
-else if (distancez < 0) {
-position.z -= speed;
-}
-
-
+						//begining the login
+						//Enemy should follow user when within a radius
+	void enemyanimation(int px, int py, int pz, float elapsed_microseconds)
+	{
+		float speed = .3;
+		if (position.x <= px) {
+			position.x += speed;
+		}
+		if (position.x >= px) {
+			position.x -= speed;
+		}
+		if (position.z <= pz) {
+			position.z += speed;
+		}
+		if (position.z >= pz) {
+			position.z -= speed;
+		}
 
 
-}
+		float enemysize = 2;
+		if (
+			(px >= (position.x - enemysize) && px <= (position.x + enemysize)) &&
+			(pz >= (position.z - enemysize) && pz <= (position.z + enemysize))
+			)
+		{
+			attacking = true;
+		}
+		else {
+			attacking = false;
+		}
 
-XMMATRIX get_matrix(XMMATRIX &ViewMatrix)
-{
+	}
 
-XMMATRIX view,R, T, S;
-view = ViewMatrix;
-//eliminate camera translation:
-view._41 = view._42 = view._43 = 0.0;
-XMVECTOR det;
-R = XMMatrixInverse(&det, view);//inverse rotation
-T = XMMatrixTranslation(position.x, position.y, position.z);
-S = XMMatrixScaling(scale, scale, scale);
-return S*R*T;
-}
+	void ammodropanimation(int px, int py, int pz, float elapsed_microseconds)
+	{
+		float drop = 4;
+		if (
+			(px >= (position.x - drop) && px <= (position.x + drop)) &&
+			(pz >= (position.z - drop) && pz <= (position.z + drop))
+			)
+		{
+			refill = true;
+		}
+		else {
+			refill = false;
+		}
 
-XMMATRIX get_matrix_y(XMMATRIX &ViewMatrix) //enemy-type
-{
-XMMATRIX view, R, T, S;
-view = ViewMatrix;
-//eliminate camera translation:
-view._41 = view._42 = view._43 = 0.0;
-XMVECTOR det;
-R = XMMatrixInverse(&det, view);//inverse rotation
-T = XMMatrixTranslation(position.x, position.y, position.z);
-S = XMMatrixScaling(scale, scale, scale);
-return S*R*T;
-}
+	}
+
+	XMMATRIX get_matrix(XMMATRIX &ViewMatrix)
+	{
+
+		XMMATRIX view, R, T, S;
+		view = ViewMatrix;
+		//eliminate camera translation:
+		view._41 = view._42 = view._43 = 0.0;
+		XMVECTOR det;
+		R = XMMatrixInverse(&det, view);//inverse rotation
+		T = XMMatrixTranslation(position.x, position.y, position.z);
+		S = XMMatrixScaling(scale, scale, scale);
+		return S*R*T;
+	}
+
+	XMMATRIX get_matrix_y(XMMATRIX &ViewMatrix) //enemy-type
+	{
+		XMMATRIX view, R, T, S;
+		view = ViewMatrix;
+		//eliminate camera translation:
+		view._41 = view._42 = view._43 = 0.0;
+		XMVECTOR det;
+		R = XMMatrixInverse(&det, view);//inverse rotation
+		T = XMMatrixTranslation(position.x, position.y, position.z);
+		S = XMMatrixScaling(scale, scale, scale);
+		return S*R*T;
+	}
 };
 
 //*****************************************
@@ -156,62 +182,62 @@ class bitmap
 {
 
 public:
-BYTE *image;
-int array_size;
-BITMAPFILEHEADER bmfh;
-BITMAPINFOHEADER bmih;
-bitmap()
-{
-image = NULL;
-}
-~bitmap()
-{
-if(image)
-delete[] image;
-array_size = 0;
-}
-bool read_image(char *filename)
-{
-ifstream bmpfile(filename, ios::in | ios::binary);
-if (!bmpfile.is_open()) return FALSE;	// Error opening file
-bmpfile.read((char*)&bmfh, sizeof(BITMAPFILEHEADER));
-bmpfile.read((char*)&bmih, sizeof(BITMAPINFOHEADER));
-bmpfile.seekg(bmfh.bfOffBits, ios::beg);
-//make the array
-if (image)delete[] image;
-int size = bmih.biWidth*bmih.biHeight * 3;
-image = new BYTE[size];//3 because red, green and blue, each one byte
-bmpfile.read((char*)image,size);
-array_size = size;
-bmpfile.close();
-check_save();
-return TRUE;
-}
-BYTE get_pixel(int x, int y,int color_offset) //color_offset = 0,1 or 2 for red, green and blue
-{
-int array_position = x*3 + y* bmih.biWidth*3+ color_offset;
-if (array_position >= array_size) return 0;
-if (array_position < 0) return 0;
-return image[array_position];
-}
-void check_save()
-{
-ofstream nbmpfile("newpic.bmp", ios::out | ios::binary);
-if (!nbmpfile.is_open()) return;
-nbmpfile.write((char*)&bmfh, sizeof(BITMAPFILEHEADER));
-nbmpfile.write((char*)&bmih, sizeof(BITMAPINFOHEADER));
-//offset:
-int rest = bmfh.bfOffBits - sizeof(BITMAPFILEHEADER) - sizeof(BITMAPINFOHEADER);
-if (rest > 0)
-{
-BYTE *r = new BYTE[rest];
-memset(r, 0, rest);
-nbmpfile.write((char*)&r, rest);
-}
-nbmpfile.write((char*)image, array_size);
-nbmpfile.close();
+	BYTE *image;
+	int array_size;
+	BITMAPFILEHEADER bmfh;
+	BITMAPINFOHEADER bmih;
+	bitmap()
+	{
+		image = NULL;
+	}
+	~bitmap()
+	{
+		if (image)
+			delete[] image;
+		array_size = 0;
+	}
+	bool read_image(char *filename)
+	{
+		ifstream bmpfile(filename, ios::in | ios::binary);
+		if (!bmpfile.is_open()) return FALSE;	// Error opening file
+		bmpfile.read((char*)&bmfh, sizeof(BITMAPFILEHEADER));
+		bmpfile.read((char*)&bmih, sizeof(BITMAPINFOHEADER));
+		bmpfile.seekg(bmfh.bfOffBits, ios::beg);
+		//make the array
+		if (image)delete[] image;
+		int size = bmih.biWidth*bmih.biHeight * 3;
+		image = new BYTE[size];//3 because red, green and blue, each one byte
+		bmpfile.read((char*)image, size);
+		array_size = size;
+		bmpfile.close();
+		check_save();
+		return TRUE;
+	}
+	BYTE get_pixel(int x, int y, int color_offset) //color_offset = 0,1 or 2 for red, green and blue
+	{
+		int array_position = x * 3 + y* bmih.biWidth * 3 + color_offset;
+		if (array_position >= array_size) return 0;
+		if (array_position < 0) return 0;
+		return image[array_position];
+	}
+	void check_save()
+	{
+		ofstream nbmpfile("newpic.bmp", ios::out | ios::binary);
+		if (!nbmpfile.is_open()) return;
+		nbmpfile.write((char*)&bmfh, sizeof(BITMAPFILEHEADER));
+		nbmpfile.write((char*)&bmih, sizeof(BITMAPINFOHEADER));
+		//offset:
+		int rest = bmfh.bfOffBits - sizeof(BITMAPFILEHEADER) - sizeof(BITMAPINFOHEADER);
+		if (rest > 0)
+		{
+			BYTE *r = new BYTE[rest];
+			memset(r, 0, rest);
+			nbmpfile.write((char*)&r, rest);
+		}
+		nbmpfile.write((char*)image, array_size);
+		nbmpfile.close();
 
-}
+	}
 };
 ////////////////////////////////////////////////////////////////////////////////
 //lets assume a wall is 10/10 big!
@@ -220,33 +246,33 @@ nbmpfile.close();
 class wall
 {
 public:
-XMFLOAT3 position;
-int texture_no;
-int rotation; //0,1,2,3,4,5 ... facing to z, x, -z, -x, y, -y
-wall()
-{
-texture_no = 0;
-rotation = 0;
-position = XMFLOAT3(0,0,0);
-}
-XMMATRIX get_matrix()
-{
-XMMATRIX R, T, T_offset;
-R = XMMatrixIdentity();
-T_offset = XMMatrixTranslation(0, 0, -HALFWALL);
-T = XMMatrixTranslation(position.x, position.y, position.z);
-switch (rotation)//0,1,2,3,4,5 ... facing to z, x, -z, -x, y, -y
-{
-default:
-case 0:	R = XMMatrixRotationY(XM_PI);		T_offset = XMMatrixTranslation(0, 0, HALFWALL); break;
-case 1: R = XMMatrixRotationY(XM_PIDIV2);	T_offset = XMMatrixTranslation(0, 0, HALFWALL); break;
-case 2:										T_offset = XMMatrixTranslation(0, 0, HALFWALL); break;
-case 3: R = XMMatrixRotationY(-XM_PIDIV2);	T_offset = XMMatrixTranslation(0, 0, HALFWALL); break;
-case 4: R = XMMatrixRotationX(XM_PIDIV2);	T_offset = XMMatrixTranslation(0, 0, -HALFWALL); break;
-case 5: R = XMMatrixRotationX(-XM_PIDIV2);	T_offset = XMMatrixTranslation(0, 0, -HALFWALL); break;
-}
-return T_offset * R * T;
-}
+	XMFLOAT3 position;
+	int texture_no;
+	int rotation; //0,1,2,3,4,5 ... facing to z, x, -z, -x, y, -y
+	wall()
+	{
+		texture_no = 0;
+		rotation = 0;
+		position = XMFLOAT3(0, 0, 0);
+	}
+	XMMATRIX get_matrix()
+	{
+		XMMATRIX R, T, T_offset;
+		R = XMMatrixIdentity();
+		T_offset = XMMatrixTranslation(0, 0, -HALFWALL);
+		T = XMMatrixTranslation(position.x, position.y, position.z);
+		switch (rotation)//0,1,2,3,4,5 ... facing to z, x, -z, -x, y, -y
+		{
+		default:
+		case 0:	R = XMMatrixRotationY(XM_PI);		T_offset = XMMatrixTranslation(0, 0, HALFWALL); break;
+		case 1: R = XMMatrixRotationY(XM_PIDIV2);	T_offset = XMMatrixTranslation(0, 0, HALFWALL); break;
+		case 2:										T_offset = XMMatrixTranslation(0, 0, HALFWALL); break;
+		case 3: R = XMMatrixRotationY(-XM_PIDIV2);	T_offset = XMMatrixTranslation(0, 0, HALFWALL); break;
+		case 4: R = XMMatrixRotationX(XM_PIDIV2);	T_offset = XMMatrixTranslation(0, 0, -HALFWALL); break;
+		case 5: R = XMMatrixRotationX(-XM_PIDIV2);	T_offset = XMMatrixTranslation(0, 0, -HALFWALL); break;
+		}
+		return T_offset * R * T;
+	}
 };
 //********************************************************************************************
 class level
@@ -411,65 +437,61 @@ class camera
 private:
 
 public:
-int w, s, a, d,q,e;
-XMFLOAT3 position;
-XMFLOAT3 rotation;
-camera()
-{
-w = s = a = d = 0;
-position = position = XMFLOAT3(0, 0, 0);
-}
-void animation(float elapsed_microseconds)
-{
-XMMATRIX Ry,Rx, T;
-Ry = XMMatrixRotationY(-rotation.y);
-Rx = XMMatrixRotationX(-rotation.x);
+	int w, s, a, d, q, e;
+	XMFLOAT3 position;
+	XMFLOAT3 rotation;
+	camera()
+	{
+		w = s = a = d = 0;
+		position = position = XMFLOAT3(0, 0, 0);
+	}
+	void animation(float elapsed_microseconds)
+	{
+		XMMATRIX Ry, Rx, T;
+		Ry = XMMatrixRotationY(-rotation.y);
+		Rx = XMMatrixRotationX(-rotation.x);
 
-XMFLOAT3 forward = XMFLOAT3(0, 0, 1);
-XMVECTOR f = XMLoadFloat3(&forward);
-f = XMVector3TransformCoord(f, Rx*Ry);
-XMStoreFloat3(&forward, f);
-XMFLOAT3 side = XMFLOAT3(1, 0, 0);
-XMVECTOR si = XMLoadFloat3(&side);
-si = XMVector3TransformCoord(si, Rx*Ry);
-XMStoreFloat3(&side, si);
+		XMFLOAT3 forward = XMFLOAT3(0, 0, 1);
+		XMVECTOR f = XMLoadFloat3(&forward);
+		f = XMVector3TransformCoord(f, Rx*Ry);
+		XMStoreFloat3(&forward, f);
+		XMFLOAT3 side = XMFLOAT3(1, 0, 0);
+		XMVECTOR si = XMLoadFloat3(&side);
+		si = XMVector3TransformCoord(si, Rx*Ry);
+		XMStoreFloat3(&side, si);
 
-float speed = elapsed_microseconds/100000.0;
+		float speed = elapsed_microseconds / 100000.0;
 
-if (w)
-{
-position.x -= forward.x * speed;
-position.y -= forward.y * speed;
-position.z -= forward.z * speed;
-}
-if (s)
-{
-position.x += forward.x * speed;
-position.y += forward.y * speed;
-position.z += forward.z * speed;
-}
-if (d)
-{
-position.x -= side.x * speed;
-position.y -= side.y * speed;
-position.z -= side.z * speed;
-}
-if (a)
-{
-position.x += side.x * speed;
-position.y += side.y * speed;
-position.z += side.z * speed;
-}
+		if (w)
+		{
+			position.x -= forward.x * speed;
+			position.z -= forward.z * speed;
+		}
+		if (s)
+		{
+			position.x += forward.x * speed;
+			position.z += forward.z * speed;
+		}
+		if (d)
+		{
+			position.x -= side.x * speed;
+			position.z -= side.z * speed;
+		}
+		if (a)
+		{
+			position.x += side.x * speed;
+			position.z += side.z * speed;
+		}
 
-}
-XMMATRIX get_matrix(XMMATRIX *view)
-{
-XMMATRIX Rx,Ry, T;
-Rx = XMMatrixRotationX(rotation.x);
-Ry = XMMatrixRotationY(rotation.y);
-T = XMMatrixTranslation(position.x, position.y, position.z);
-return T*(*view)*Ry*Rx;
-}
+	}
+	XMMATRIX get_matrix(XMMATRIX *view)
+	{
+		XMMATRIX Rx, Ry, T;
+		Rx = XMMatrixRotationX(rotation.x);
+		Ry = XMMatrixRotationY(rotation.y);
+		T = XMMatrixTranslation(position.x, position.y, position.z);
+		return T*(*view)*Ry*Rx;
+	}
 };
 
 
