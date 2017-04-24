@@ -36,6 +36,7 @@ ID3D11Buffer*                       g_pVertexBuffer_ = NULL;
 ID3D11Buffer*                       g_pVertexBuffer_3ds = NULL;
 
 static billboard enemy, ammodrop;
+billboard							enemies[1000];
 float								player_lives = 5.0;
 float								player_health = 1.0;
 float								enemy_health = 1.0;
@@ -409,7 +410,11 @@ HRESULT InitDevice()
 	Load3DS("bullet.3ds", g_pd3dDevice, &g_pVertexBuffer_ammo, &ammo_vertex_anz);
 	Load3DS("box.3ds", g_pd3dDevice, &g_pVertexBuffer_health, &health_vertex_anz);
 	Load3DS("Supplies.3ds", g_pd3dDevice, &g_pVertexBuffer_ammodrop, &ammodrop_vertex_anz);
-	enemy.setPosition(0, -1, 10);
+	
+	for (int i = 0; i < 5; i++) {
+		enemies[i].setPosition(rand() % 10 -10, -1, 20);
+
+	}
 
     // Set vertex buffer
     UINT stride = sizeof( SimpleVertex );
@@ -1121,7 +1126,7 @@ void enemyHealth(UINT stride, UINT offset, float x, float y) {
 	g_pImmediateContext->Draw(ammo_vertex_anz, 0);
 }
 
-void CreateEnemy(UINT stride, UINT offset, float x, float y, float z) {
+void CreateEnemy(UINT stride, UINT offset, billboard enemy, float x, float y, float z) {
 	XMMATRIX view = cam.get_matrix(&g_View);
 	ConstantBuffer constantbuffer2;
 	constantbuffer2.View = XMMatrixTranspose(view);
@@ -1242,7 +1247,6 @@ UINT offset = 0;
     g_pImmediateContext->ClearDepthStencilView( g_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0 );
 
 	cam.animation(elapsed);
-	enemy.enemyanimation(-cam.position.x, -cam.position.y, -cam.position.z, elapsed * 2);
 	ammodrop.ammodropanimation(-cam.position.x, -cam.position.y, -cam.position.z, 1, -1, 5);
 	XMMATRIX view = cam.get_matrix(&g_View);
 
@@ -1292,8 +1296,15 @@ UINT offset = 0;
 
 
 	//Create enemy
-	worldmatrix = enemy.get_matrix_y(view);
-	CreateEnemy(stride, offset, 1, -1, 1);
+	for (int num = 0; num < 5; num++) {
+		enemies[num].enemyanimation(-cam.position.x, -cam.position.y, -cam.position.z, elapsed * 2);
+		worldmatrix = enemies[num].get_matrix_y(view);
+		CreateEnemy(stride, offset, enemies[num], 1 , -1 + num, 1);
+		if (enemies[0].attacking) {
+			player_health -= 0.01;
+		}
+	}
+	
 
 	//Generate User Gun
 	GenUserGun(stride, offset);
@@ -1301,9 +1312,6 @@ UINT offset = 0;
 	//Display the User HUD
 	DisplayHUD(stride, offset);
 
-	if (enemy.attacking) {
-		player_health -= 0.01;
-	}
 
 	if (player_health <= 0.0) {
 		PostQuitMessage(0);
