@@ -117,7 +117,7 @@ public:
 		if (position.z >= pz) {
 			position.z -= speed;
 		}
-
+		 
 
 		float enemysize = 2;
 		if (
@@ -133,12 +133,12 @@ public:
 
 	}
 
-	void ammodropanimation(int px, int py, int pz, float elapsed_microseconds)
+	void ammodropanimation(int px, int py, int pz, int dx, int dy, int dz)
 	{
-		float drop = 4;
+		float drop = 1;
 		if (
-			(px >= (position.x - drop) && px <= (position.x + drop)) &&
-			(pz >= (position.z - drop) && pz <= (position.z + drop))
+			(px >= (dx - drop) && px <= (dx + drop)) &&
+			(pz >= (dz - drop) && pz <= (dz + drop))
 			)
 		{
 			refill = true;

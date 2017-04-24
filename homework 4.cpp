@@ -1034,6 +1034,7 @@ void DropAmmo(UINT stride, UINT offset, float x, float y, float z) {
 	g_pImmediateContext->VSSetSamplers(0, 1, &g_pSamplerLinear);
 	g_pImmediateContext->Draw(enemy_vertex_anz, 0);
 	g_pImmediateContext->OMSetDepthStencilState(ds_off, 1);
+
 }
 
 
@@ -1242,7 +1243,7 @@ UINT offset = 0;
 
 	cam.animation(elapsed);
 	enemy.enemyanimation(-cam.position.x, -cam.position.y, -cam.position.z, elapsed * 2);
-	ammodrop.ammodropanimation(-cam.position.x, -cam.position.y, -cam.position.z, elapsed * 2);
+	ammodrop.ammodropanimation(-cam.position.x, -cam.position.y, -cam.position.z, 1, -1, 5);
 	XMMATRIX view = cam.get_matrix(&g_View);
 
 	XMMATRIX Iview = view;
@@ -1276,9 +1277,18 @@ UINT offset = 0;
 
 
 
-	//Create ammo drop
-	worldmatrix = ammodrop.get_matrix_y(view);
-	DropAmmo(stride, offset, 1, -1, 5);
+	if (ammodrop.refill) {
+		if (!player_active_reloading) {
+			player_ammo_total += 8;
+			player_active_reloading = true;
+		}
+	}
+	else {
+		player_active_reloading = false;
+		//Create ammo drop
+		worldmatrix = ammodrop.get_matrix_y(view);
+		DropAmmo(stride, offset, 1, -1, 5);
+	}
 
 
 	//Create enemy
@@ -1290,10 +1300,6 @@ UINT offset = 0;
 
 	//Display the User HUD
 	DisplayHUD(stride, offset);
-
-	if (ammodrop.refill) {
-		player_ammo_total += 8;
-	}
 
 	if (enemy.attacking) {
 		player_health -= 0.01;
