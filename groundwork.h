@@ -104,21 +104,24 @@ public:
 						//Enemy should follow user when within a radius
 	void enemyanimation(int px, int py, int pz, float elapsed_microseconds)
 	{
+		float distance = sqrt(pow(position.x - px, 2) + pow(position.z - pz, 2));
 		float speed = .3;
-		if (position.x <= px) {
-			position.x += speed;
-		}
-		if (position.x >= px) {
-			position.x -= speed;
-		}
-		if (position.z <= pz) {
-			position.z += speed;
-		}
-		if (position.z >= pz) {
-			position.z -= speed;
+		float range = 10;
+		if (distance < 10) {
+			if (position.x <= px) {
+				position.x += speed;
+			}
+			if (position.x >= px) {
+				position.x -= speed;
+			}
+			if (position.z <= pz) {
+				position.z += speed;
+			}
+			if (position.z >= pz) {
+				position.z -= speed;
+			}
 		}
 		 
-
 		float enemysize = 2;
 		if (
 			(px >= (position.x - enemysize) && px <= (position.x + enemysize)) &&
