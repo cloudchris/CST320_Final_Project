@@ -1246,7 +1246,7 @@ UINT offset = 0;
     // Clear the depth buffer to 1.0 (max depth)
     g_pImmediateContext->ClearDepthStencilView( g_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0 );
 
-	cam.animation(elapsed);
+	cam.animation(elapsed, bottom.get_bitmap());
 	ammodrop.ammodropanimation(-cam.position.x, -cam.position.y, -cam.position.z, 1, -1, 5);
 	XMMATRIX view = cam.get_matrix(&g_View);
 

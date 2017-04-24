@@ -290,6 +290,7 @@ private:
 		int x_offset = (leveldata.bmih.biWidth / 2)*FULLWALL;
 
 		//lets go over each pixel without the borders!, only the inner ones
+
 		for (int yy = 1; yy < (leveldata.bmih.biHeight - 1); yy++)
 			for (int xx = 1; xx < (leveldata.bmih.biWidth - 1); xx++)
 			{
@@ -298,36 +299,90 @@ private:
 				//green only: floor. texture number = 255 - green
 				//red only: ceiling. texture number = 255 - red
 				//green and red: floor and ceiling ............
-				BYTE red, green, blue;
+
+				BYTE red, green, blue, initB, initG, initR;
 
 				blue = leveldata.get_pixel(xx, yy, 0);
 				green = leveldata.get_pixel(xx, yy, 1);
 				red = leveldata.get_pixel(xx, yy, 2);
 
+				initB = leveldata.get_pixel(0, 39, 0);
+				initG = leveldata.get_pixel(0, 39, 1);
+				initR = leveldata.get_pixel(0, 39, 2);
 
-				if (red == 255 && blue == 255) {
+				BYTE left_red = leveldata.get_pixel(xx - 1, yy, 2);
+				BYTE left_green = leveldata.get_pixel(xx - 1, yy, 1);
+				BYTE right_red = leveldata.get_pixel(xx + 1, yy, 2);
+				BYTE right_green = leveldata.get_pixel(xx + 1, yy, 1);
+				BYTE top_red = leveldata.get_pixel(xx, yy + 1, 2);
+				BYTE top_green = leveldata.get_pixel(xx, yy + 1, 1);
+				BYTE bottom_red = leveldata.get_pixel(xx, yy - 1, 2);
+				BYTE bottom_green = leveldata.get_pixel(xx, yy - 1, 1);
+
+				if (initR == 255 && initB == 255) { // Top
 					int texno = 0;
 					init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 76 - 2, yy*FULLWALL), 4, texno);
 				}
-				else if (blue == 255) {
-					int texno = 2;
-					init_wall(XMFLOAT3(FULLWALL - x_offset + 76, xx * 2 - 2, yy*FULLWALL), 3, texno);
-				}
-				else if (red == 255 && green == 255) {
+
+				else if (initR == 255 && initG == 255) { // Left
 					int texno = 2;
 					init_wall(XMFLOAT3(FULLWALL - x_offset - 2, xx * 2 - 2, yy*FULLWALL), 1, texno);
 				}
-				else if (green == 255) {
-					int texno = 3;
-					init_wall(XMFLOAT3(xx*FULLWALL - x_offset, yy * 2 - 2, FULLWALL + 76), 0, texno);
-				}
-				else if (red == 100 && green == 100 && blue == 100) {
+				else if (initR == 100 && initG == 100 && initB == 100) { // Back
 					int texno = 3;
 					init_wall(XMFLOAT3(xx*FULLWALL - x_offset, yy * 2 - 2, FULLWALL - 2), 2, texno);
 				}
+				else if (initB == 255) { // Right. FIX THIS
+					int texno = 2;
+					init_wall(XMFLOAT3(FULLWALL - x_offset + 76, xx * 2 - 2, yy*FULLWALL), 3, texno);
 
-				else if (blue > 0)//wall possible
-				{
+
+					if (red == 123 && green == 123) {
+						int texno = 3;
+						init_wall(XMFLOAT3(FULLWALL - x_offset + 76 - 2, xx * 2, yy*FULLWALL), 5, texno);
+
+
+						if (left_red > 0 || left_green > 0) {
+							init_wall(XMFLOAT3(FULLWALL - x_offset + 76 - 2, xx * 2 - 2, yy*FULLWALL), 3, texno);
+							init_wall(XMFLOAT3(FULLWALL - x_offset + 76 - 2, xx * 2 - 2, yy*FULLWALL), 2, texno);
+						}
+						if (right_red > 0 || right_green > 0)// 
+							init_wall(XMFLOAT3(FULLWALL - x_offset + 76 - 2, xx * 2, yy*FULLWALL), 0, texno);
+						if (top_red > 0 || top_green > 0)// 
+							init_wall(XMFLOAT3(FULLWALL - x_offset + 76 - 2, xx * 2 - 4, yy*FULLWALL), 4, texno);
+						if (bottom_red > 0 || bottom_green > 0) {
+							init_wall(XMFLOAT3(FULLWALL - x_offset + 76 - 2, xx * 2 - 2, yy*FULLWALL - 2), 3, texno);
+							init_wall(XMFLOAT3(FULLWALL - x_offset + 76 - 2, xx * 2 - 2, yy*FULLWALL), 2, texno);
+						}
+					}
+				}
+				else if (initG == 255) { // Front
+					int texno = 3;
+					init_wall(XMFLOAT3(xx*FULLWALL - x_offset, yy * 2 - 2, FULLWALL + 76), 0, texno);
+
+
+					if (red == 123 && green == 123) {
+						int texno = 2;
+						init_wall(XMFLOAT3(xx*FULLWALL - x_offset, yy * 2, FULLWALL + 74), 5, texno);
+
+						if (left_red > 0 || left_green > 0)// left
+							init_wall(XMFLOAT3(xx*FULLWALL - x_offset, yy * 2 - 2, FULLWALL + 74), 3, texno);
+						if (right_red > 0 || right_green > 0)// bot
+							init_wall(XMFLOAT3(xx*FULLWALL - x_offset, yy * 2 - 4, FULLWALL + 74), 4, texno);
+						if (top_red > 0 || top_green > 0)// right
+							init_wall(XMFLOAT3(xx*FULLWALL - x_offset, yy * 2 - 2, FULLWALL + 74), 1, texno);
+						if (bottom_red > 0 || bottom_green > 0)// front
+							init_wall(XMFLOAT3(xx*FULLWALL - x_offset, yy * 2 - 2, FULLWALL + 74), 0, texno);
+					}
+
+				}
+				else if (initR == 255) { // Bottom
+					int texno = 0;
+					init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 5, texno);
+
+					/*
+					if (blue == 123)//wall possible
+					{
 					int texno = 255 - blue;
 					BYTE left_red = leveldata.get_pixel(xx - 1, yy, 2);
 					BYTE left_green = leveldata.get_pixel(xx - 1, yy, 1);
@@ -338,27 +393,48 @@ private:
 					BYTE bottom_red = leveldata.get_pixel(xx, yy - 1, 2);
 					BYTE bottom_green = leveldata.get_pixel(xx, yy - 1, 1);
 
-					if (left_red>0 || left_green > 0)//to the left
-						init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 3, texno);
-					if (right_red>0 || right_green > 0)//to the right
-						init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 1, texno);
-					if (top_red>0 || top_green > 0)//to the top
-						init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 2, texno);
-					if (bottom_red>0 || bottom_green > 0)//to the bottom
-						init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 0, texno);
-				}
-				else if (red > 0)//ceiling
-				{
-					int texno = 255 - red;
+					if (left_red > 0 || left_green > 0)//to the left
+					init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 3, texno);
+					if (right_red > 0 || right_green > 0)//to the right
+					init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 1, texno);
+					if (top_red > 0 || top_green > 0)//to the top
+					init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 2, texno);
+					if (bottom_red > 0 || bottom_green > 0)//to the bottom
+					init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 0, texno);
+					}
+					*/
+					if (red == 123 && green == 123) {
+						int texno = 2;
+						init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 5, texno);
+
+						init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 2, yy*FULLWALL), 5, texno);
+
+
+						if (left_red > 0 || left_green > 0)//to the left
+							init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 3, texno);
+						if (right_red > 0 || right_green > 0)//to the right
+							init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 1, texno);
+						if (top_red > 0 || top_green > 0)//to the top
+							init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 2, texno);
+						if (bottom_red > 0 || bottom_green > 0)//to the bottom
+							init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 0, texno);
+					}
+					/*
+					else if (red == 123)//ceiling
+					{
+					int texno = 2;
 					init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 5, texno);
-				}
-				else if (green > 0)//floor
-				{
-					int texno = 255 - green;
+					}
+					else if (green == 123)//floor
+					{
+					int texno = 2;
 					init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 4, texno);
+					}
+					*/
 				}
 			}
 	}
+
 	void init_wall(XMFLOAT3 pos, int rotation, int texture_no)
 	{
 		wall *w = new wall;
@@ -368,6 +444,10 @@ private:
 		w->texture_no = texture_no;
 	}
 public:
+	bitmap *get_bitmap()//get method *NEW*
+	{
+		return &leveldata;
+	}
 	level()
 	{
 	}
@@ -441,14 +521,14 @@ private:
 
 public:
 	int w, s, a, d, q, e;
-	XMFLOAT3 position;
+	XMFLOAT3 position, possible_position;
 	XMFLOAT3 rotation;
 	camera()
 	{
 		w = s = a = d = 0;
 		position = position = XMFLOAT3(0, 0, 0);
 	}
-	void animation(float elapsed_microseconds)
+	void animation(float elapsed_microseconds, bitmap *leveldata)
 	{
 		XMMATRIX Ry, Rx, T;
 		Ry = XMMatrixRotationY(-rotation.y);
@@ -464,27 +544,62 @@ public:
 		XMStoreFloat3(&side, si);
 
 		float speed = elapsed_microseconds / 100000.0;
+		possible_position = position;
 
 		if (w)
 		{
-			position.x -= forward.x * speed;
-			position.z -= forward.z * speed;
+			possible_position.x -= forward.x * speed;
+			possible_position.z -= forward.z * speed;
 		}
 		if (s)
 		{
-			position.x += forward.x * speed;
-			position.z += forward.z * speed;
+			possible_position.x += forward.x * speed;
+			possible_position.z += forward.z * speed;
 		}
 		if (d)
 		{
-			position.x -= side.x * speed;
-			position.z -= side.z * speed;
+			possible_position.x -= side.x * speed;
+			possible_position.z -= side.z * speed;
 		}
 		if (a)
 		{
-			position.x += side.x * speed;
-			position.z += side.z * speed;
+			possible_position.x += side.x * speed;
+			possible_position.z += side.z * speed;
 		}
+
+		/*
+		leveldata->get_pixel(x, z, 0); // scale and translate from camPos to bitmapPos first. bitap thinks (0, 0) is bottom left pixel, camera thinks its bottom middle?
+
+		//wall information is the interface between pixels:
+		//blue to something not blue: wall. texture number = 255 - blue
+		//green only: floor. texture number = 255 - green
+		//red only: ceiling. texture number = 255 - red
+		//green and red: floor and ceiling ............
+		*/
+		/*
+		BYTE red, green, blue;
+		float x = 0;
+		float z = 0;
+
+		x = (possible_position.x = 0);
+		z = (possible_position.z * -0.51) - 5;
+
+
+		blue = leveldata->get_pixel((int)x, (int)z, 0);
+		green = leveldata->get_pixel((int)x, (int)z, 1);
+		red = leveldata->get_pixel((int)x, (int)z, 2);
+
+
+		//if (position.x < 39 && position.x > -37) {
+		if (red == 255){
+		position = possible_position;
+		}
+		else {
+
+		}
+		*/
+		position = possible_position;
+
 
 	}
 	XMMATRIX get_matrix(XMMATRIX *view)
