@@ -1327,8 +1327,13 @@ UINT offset = 0;
 		g_pImmediateContext->Draw(12, 0);
 	}
 
+	//Player health and life
 	if (player_health <= 0.0) {
-		PostQuitMessage(0);
+		player_lives -= 1;
+		player_health = 1.0;
+		
+		if(player_lives == 0)
+			PostQuitMessage(0);
 	}
 
 
