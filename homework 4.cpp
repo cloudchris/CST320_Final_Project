@@ -450,6 +450,7 @@ HRESULT InitDevice()
 	if (FAILED(hr))
 		return hr;
 
+
     // Create the sample state
     D3D11_SAMPLER_DESC sampDesc;
     ZeroMemory( &sampDesc, sizeof(sampDesc) );
@@ -645,6 +646,8 @@ void OnLBD(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT keyFlags)
 		bull->imp = forward;
 		player_ammo_current--;
 	}
+
+	
 	}
 
 ///////////////////////////////////
@@ -1030,7 +1033,7 @@ void DropAmmo(UINT stride, UINT offset, float x, float y, float z) {
 }
 
 
-void Health(UINT stride, UINT offset, float x, float y) {
+void playerHealth(UINT stride, UINT offset, float x, float y) {
 	XMMATRIX view = cam.get_matrix(&g_View);
 
 	// Update skybox constant buffer
@@ -1073,7 +1076,45 @@ void Health(UINT stride, UINT offset, float x, float y) {
 	g_pImmediateContext->OMSetDepthStencilState(ds_on, 1);
 	g_pImmediateContext->Draw(ammo_vertex_anz, 0);
 }
+void enemyHealth(UINT stride, UINT offset, float x, float y) {
+	XMMATRIX view = cam.get_matrix(&g_View);
 
+	// Update skybox constant buffer
+	ConstantBuffer constantbuffer;
+	constantbuffer.View = XMMatrixTranspose(view);
+	constantbuffer.Projection = XMMatrixTranspose(g_Projection);
+	//constantbuffer.CameraPos = XMFLOAT4(cam.position.x, cam.position.y, cam.position.z, 1);
+	//render model:
+	float scale = enemy_health / 100;
+	XMMATRIX S = XMMatrixScaling(scale, scale / 2, scale / 2);
+
+
+	//S = XMMatrixScaling(10, 10, 10);
+	XMMATRIX T, R, R2, M, T_off;
+	T = XMMatrixTranslation(enemy.position.x, enemy.position.y + 0.5, enemy.position.z);
+	T_off = XMMatrixTranslation(x, y, 0);		//OFFSET FROM THE CENTER
+	R2 = XMMatrixRotationX(-XM_PI);
+	M = S*R2*T_off*T;
+
+
+	constantbuffer.World = XMMatrixTranspose(M);
+	g_pImmediateContext->UpdateSubresource(g_pCBuffer, 0, NULL, &constantbuffer, 0, 0);
+
+
+	// Render terrain
+	g_pImmediateContext->VSSetShader(g_pVertexShader, NULL, 0);
+	g_pImmediateContext->PSSetShader(g_pPixelShader, NULL, 0);
+	g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pCBuffer);
+	g_pImmediateContext->PSSetConstantBuffers(0, 1, &g_pCBuffer);
+	g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureA);
+	g_pImmediateContext->VSSetShaderResources(0, 1, &g_pTextureA);
+	g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer_health, &stride, &offset);
+	g_pImmediateContext->PSSetSamplers(0, 1, &g_pSamplerLinear);
+	g_pImmediateContext->VSSetSamplers(0, 1, &g_pSamplerLinear);
+
+	g_pImmediateContext->OMSetDepthStencilState(ds_on, 1);
+	g_pImmediateContext->Draw(ammo_vertex_anz, 0);
+}
 //*******************************************************
 
 void Render()
@@ -1139,7 +1180,7 @@ UINT offset = 0;
 		player_ammo_total += 8;
 	}
 
-	//static billboard bill;
+	static billboard bill;
 	//animate_rocket(elapsed);
 	//bill.position = rocket_position;
 	//worldmatrix = bill.get_matrix(view);
@@ -1249,7 +1290,9 @@ UINT offset = 0;
 		x += 0.05;
 	}
 
-	Health(stride, offset, -1.0, 0.0);
+	playerHealth(stride, offset, -1.0, 0.0);
+
+	enemyHealth(stride, offset, 0.0, 0.5);
 
 	if (cam.position.x == enemy.position.x &&  cam.position.y == enemy.position.z && cam.position.z == enemy.position.z) {
 		player_health = 0.0;
