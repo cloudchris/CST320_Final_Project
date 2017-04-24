@@ -42,6 +42,7 @@ float								player_health = 1.0;
 float								enemy_health = 1.0;
 int									model_vertex_anz = 0;
 int									enemy_vertex_anz = 1;
+int									total_enemies = 1;
 int									health_vertex_anz = 2;
 int									ammodrop_vertex_anz = 3;
 int									ammo_vertex_anz = 0;
@@ -56,11 +57,15 @@ ID3D11BlendState*					g_BlendState;
 ID3D11Buffer*                       g_pCBuffer = NULL;
 music_								music;
 ID3D11ShaderResourceView*           g_pTextureRV = NULL;
+ID3D11ShaderResourceView*           g_pTextureEnemy = NULL;
 ID3D11ShaderResourceView*           g_pTextureA = NULL;
 ID3D11ShaderResourceView*			g_pTextureammodrop = NULL;
 ID3D11ShaderResourceView*			g_pTextureBull = NULL;
 ID3D11RasterizerState				*rs_CW, *rs_CCW, *rs_NO, *rs_Wire;
 
+
+int thrillsong;
+int ambientsong;
 ID3D11SamplerState*                 g_pSamplerLinear = NULL;
 XMMATRIX                            g_World;
 XMMATRIX                            g_View;
@@ -202,8 +207,10 @@ HRESULT CompileShaderFromFile( WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR sz
 //--------------------------------------------------------------------------------------
 HRESULT InitDevice()
 {
+	music.set_auto_fadein_fadeout(true);
     HRESULT hr = S_OK;
-
+	ambientsong = music.init_music("ambient.mp3");
+	
     RECT rc;
     GetClientRect( g_hWnd, &rc );
     UINT width = rc.right - rc.left;
@@ -406,12 +413,12 @@ HRESULT InitDevice()
 	//hornet.3ds
 	//f15.3ds
 	Load3DS("Glock.3ds", g_pd3dDevice, &g_pVertexBuffer_3ds, &model_vertex_anz);
-	Load3DS("wolf.3ds", g_pd3dDevice, &g_pVertexBuffer_enemy, &enemy_vertex_anz);
+	Load3DS("zombie.3ds", g_pd3dDevice, &g_pVertexBuffer_enemy, &enemy_vertex_anz);
 	Load3DS("bullet.3ds", g_pd3dDevice, &g_pVertexBuffer_ammo, &ammo_vertex_anz);
 	Load3DS("box.3ds", g_pd3dDevice, &g_pVertexBuffer_health, &health_vertex_anz);
 	Load3DS("Supplies.3ds", g_pd3dDevice, &g_pVertexBuffer_ammodrop, &ammodrop_vertex_anz);
 	
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < total_enemies; i++) {
 		enemies[i].setPosition(rand() % 10 -10, -1, 20);
 
 	}
@@ -439,6 +446,11 @@ HRESULT InitDevice()
     hr = D3DX11CreateShaderResourceViewFromFile( g_pd3dDevice, L"carbon.jpg", NULL, NULL, &g_pTextureRV, NULL );
     if( FAILED( hr ) )
         return hr;
+	// Load the Texture
+	hr = D3DX11CreateShaderResourceViewFromFile(g_pd3dDevice, L"zombie.jpg", NULL, NULL, &g_pTextureEnemy, NULL);
+	if (FAILED(hr))
+		return hr;
+
 
 	// Load the Texture
 	hr = D3DX11CreateShaderResourceViewFromFile(g_pd3dDevice, L"boxtext.jpg", NULL, NULL, &g_pTextureA, NULL);
@@ -613,6 +625,7 @@ void CleanupDevice()
 
     if( g_pSamplerLinear ) g_pSamplerLinear->Release();
     if( g_pTextureRV ) g_pTextureRV->Release();
+	if (g_pTextureEnemy) g_pTextureEnemy->Release();
 	if (g_pTextureBull) g_pTextureBull->Release();
 	if (g_pTextureA) g_pTextureA->Release();
 	if (g_pTextureammodrop) g_pTextureammodrop->Release();
@@ -1134,7 +1147,7 @@ void CreateEnemy(UINT stride, UINT offset, billboard enemy, float x, float y, fl
 	constantbuffer2.CameraPos = XMFLOAT4(cam.position.x, cam.position.y, cam.position.z, 1);
 
 	//animate_rocket(elapsed);ssssssssss
-	XMMATRIX S2 = XMMatrixScaling(0.005, 0.005, 0.005);
+	XMMATRIX S2 = XMMatrixScaling(0.008, 0.008, 0.008);
 
 
 	//S = XMMatrixScaling(10, 10, 10);
@@ -1142,7 +1155,7 @@ void CreateEnemy(UINT stride, UINT offset, billboard enemy, float x, float y, fl
 	XMMATRIX R2 = XMMatrixRotationX(-XM_PIDIV2);
 	XMMATRIX RY3 = XMMatrixRotationY(XM_PI);
 	XMMATRIX RY4 = XMMatrixRotationY(-XM_PIDIV2);
-	XMMATRIX RY2 = XMMatrixRotationY(enemy.angle);
+	XMMATRIX RY2 = XMMatrixRotationY(cam.rotation.y);
 	XMMATRIX T2 = XMMatrixTranslation(enemy.position.x, enemy.position.y, enemy.position.z);
 	XMMATRIX M2 = S2*R2*RY3*RY4*RY2*T2;
 
@@ -1153,8 +1166,8 @@ void CreateEnemy(UINT stride, UINT offset, billboard enemy, float x, float y, fl
 	g_pImmediateContext->PSSetShader(g_pPixelShader, NULL, 0);
 	g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pCBuffer);
 	g_pImmediateContext->PSSetConstantBuffers(0, 1, &g_pCBuffer);
-	g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureRV);
-	g_pImmediateContext->VSSetShaderResources(0, 1, &g_pTextureRV);
+	g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureEnemy);
+	g_pImmediateContext->VSSetShaderResources(0, 1, &g_pTextureEnemy);
 	g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer_enemy, &stride, &offset);
 	g_pImmediateContext->PSSetSamplers(0, 1, &g_pSamplerLinear);
 	g_pImmediateContext->VSSetSamplers(0, 1, &g_pSamplerLinear);
@@ -1232,7 +1245,7 @@ static StopWatchMicro_ stopwatch;
 long elapsed = stopwatch.elapse_micro();
 stopwatch.start();//restart
 
-
+music.play(ambientsong);
 
 UINT stride = sizeof(SimpleVertex);
 UINT offset = 0;
@@ -1296,11 +1309,12 @@ UINT offset = 0;
 
 
 	//Create enemy
-	for (int num = 0; num < 5; num++) {
+	for (int num = 0; num < total_enemies; num++) {
 		enemies[num].enemyanimation(-cam.position.x, -cam.position.y, -cam.position.z, elapsed * 2);
 		worldmatrix = enemies[num].get_matrix_y(view);
 		CreateEnemy(stride, offset, enemies[num], 1 , -1 + num, 1);
 		if (enemies[0].attacking) {
+			music.play_fx("zombie.wav");
 			player_health -= 0.01;
 		}
 	}
