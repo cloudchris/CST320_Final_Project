@@ -13,7 +13,6 @@
 
 using namespace std;
 
-
 struct SimpleVertex
 {
 	XMFLOAT3 Pos;
@@ -223,6 +222,17 @@ public:
 		if (array_position < 0) return 0;
 		return image[array_position];
 	}
+	BYTE get_pixelBounded(int x, int y, int color_offset) //color_offset = 0,1 or 2 for red, green and blue
+	{
+		if (x <= 0 || x >= bmih.biWidth-1 || y <= 0 || y >= bmih.biHeight-1)
+		{
+			return 0;
+		}
+		int array_position = x * 3 + y* bmih.biWidth * 3 + color_offset;
+		if (array_position >= array_size) return 0;
+		if (array_position < 0) return 0;
+		return image[array_position];
+	}
 	void check_save()
 	{
 		ofstream nbmpfile("newpic.bmp", ios::out | ios::binary);
@@ -405,7 +415,6 @@ private:
 					*/
 					if (red == 123 && green == 123) {
 						int texno = 2;
-						init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 0, yy*FULLWALL), 5, texno);
 
 						init_wall(XMFLOAT3(xx*FULLWALL - x_offset, 2, yy*FULLWALL), 5, texno);
 
@@ -550,6 +559,7 @@ public:
 		{
 			possible_position.x -= forward.x * speed;
 			possible_position.z -= forward.z * speed;
+			//possible_position.y -= forward.y * speed;
 		}
 		if (s)
 		{
@@ -570,36 +580,31 @@ public:
 		/*
 		leveldata->get_pixel(x, z, 0); // scale and translate from camPos to bitmapPos first. bitap thinks (0, 0) is bottom left pixel, camera thinks its bottom middle?
 
-		//wall information is the interface between pixels:
-		//blue to something not blue: wall. texture number = 255 - blue
-		//green only: floor. texture number = 255 - green
-		//red only: ceiling. texture number = 255 - red
-		//green and red: floor and ceiling ............
 		*/
-		/*
+		//*
 		BYTE red, green, blue;
 		float x = 0;
 		float z = 0;
 
-		x = (possible_position.x = 0);
-		z = (possible_position.z * -0.51) - 5;
+		x = (possible_position.x * -0.5) + 20.5;
+		z = (possible_position.z * -0.5) + 0.5;
 
 
 		blue = leveldata->get_pixel((int)x, (int)z, 0);
 		green = leveldata->get_pixel((int)x, (int)z, 1);
-		red = leveldata->get_pixel((int)x, (int)z, 2);
+		red = leveldata->get_pixelBounded((int)x, (int)z, 2);
 
 
 		//if (position.x < 39 && position.x > -37) {
 		if (red == 255){
-		position = possible_position;
+			position = possible_position;
 		}
 		else {
-
+			
 		}
-		*/
-		position = possible_position;
-
+		
+		//*/
+		
 
 	}
 	XMMATRIX get_matrix(XMMATRIX *view)

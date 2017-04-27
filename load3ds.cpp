@@ -277,6 +277,7 @@ bool Load3DS(char *filename, ID3D11Device* g_pd3dDevice, ID3D11Buffer **ppVertex
 		flags[ii] = 0;//not vistied
 		
 	//lets store all similar normal vector addresses here:
+	/*
 	for (int ii = 0; ii < vertex_anz; ii++)
 		{
 		if (flags[ii] == 1)continue;
@@ -297,7 +298,7 @@ bool Load3DS(char *filename, ID3D11Device* g_pd3dDevice, ID3D11Buffer **ppVertex
 		noIndexVer[ii].Norm = average_norm;
 		for (int uu = 0; uu < normals.size(); uu++)
 			*normals[uu] = average_norm;
-		}
+		}*/
 	//initialize d3dx verexbuff:
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
