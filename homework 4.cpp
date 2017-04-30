@@ -34,21 +34,28 @@ ID3D11Buffer*                       g_pVertexBuffer_ammodrop = NULL;
 ID3D11Buffer*                       g_pVertexBuffer_ = NULL;
 ID3D11Buffer*                       g_pVertexBuffer_3ds = NULL;
 
-static billboard enemy, ammodrop;
+billboard							ammodrop[1000];
+int									AMMODROPCOUNT = 10;
+
 billboard							enemies[1000];
+int									ENEMYCOUNT = 1;
+
 float								player_lives = 5.0;
 float								player_health = 1.0;
-float								enemy_health = 1.0;
-int									model_vertex_anz = 0;
-int									enemy_vertex_anz = 1;
-int									total_enemies = 1;
-int									health_vertex_anz = 2;
-int									ammodrop_vertex_anz = 3;
-int									ammo_vertex_anz = 0;
+static float						player_gun_movement = 1.3;
 int									player_ammo_current = 8;
 int									player_ammo_total = 0;
 bool								player_gun_loaded = true;
 bool								player_active_reloading = false;
+
+
+int									model_vertex_anz = 0;
+int									enemy_vertex_anz = 1;
+int									health_vertex_anz = 2;
+int									ammodrop_vertex_anz = 3;
+int									ammo_vertex_anz = 0;
+
+
 //states for turning off and on the depth buffer
 ID3D11DepthStencilState				*ds_on, *ds_off;
 ID3D11BlendState*					g_BlendState;
@@ -81,6 +88,13 @@ level								front;
 level								back;
 vector<billboard*>					smokeray;
 XMFLOAT3							rocket_position;
+
+XMFLOAT3							enemy_spawn_1(1.0, -1.0, 5);
+XMFLOAT3							enemy_spawn_2(1.0, -1.0, 7);
+XMFLOAT3							enemy_spawn_3(1.0, -1.0, 9);
+XMFLOAT3							enemy_spawn_4(1.0, -1.0, 15);
+
+
 #define ROCKETRADIUS				10
 //--------------------------------------------------------------------------------------
 // Forward declarations
@@ -417,11 +431,6 @@ HRESULT InitDevice()
 	Load3DS("box.3ds", g_pd3dDevice, &g_pVertexBuffer_health, &health_vertex_anz);
 	Load3DS("Supplies.3ds", g_pd3dDevice, &g_pVertexBuffer_ammodrop, &ammodrop_vertex_anz);
 
-	for (int i = 0; i < total_enemies; i++) {
-		enemies[i].setPosition(rand() % 10 - 10, -1, 20);
-
-	}
-
 	// Set vertex buffer
 	UINT stride = sizeof(SimpleVertex);
 	UINT offset = 0;
@@ -611,9 +620,12 @@ HRESULT InitDevice()
 	RS_Wire.FillMode = D3D11_FILL_WIREFRAME;
 	g_pd3dDevice->CreateRasterizerState(&RS_Wire, &rs_Wire);
 	g_pd3dDevice->CreateRasterizerState(&RS_CW, &rs_CW);
-
+	
+	
+	for (int num = 0; num < ENEMYCOUNT; num++) {
+		enemies[num].setPosition(-1, -1, 5);
+	}
 	music.play(ambientsong);
-
 	return S_OK;
 }
 
@@ -653,14 +665,17 @@ void OnLBD(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT keyFlags)
 		//Shhot bullet in here.
 		music.play_fx("gunshot.mp3");
 		bull = new bullet;
-		bull->pos.x = -cam.position.x;
-		bull->pos.y = -cam.position.y - 1.2;
+		bull->pos.x = -cam.position.x + 1.4;
+		bull->pos.y = -cam.position.y;
 		bull->pos.z = -cam.position.z;
 		XMMATRIX CR = XMMatrixRotationY(-cam.rotation.y);
+		XMMATRIX CR2 = XMMatrixRotationX(-cam.rotation.x);
 
 		XMFLOAT3 forward = XMFLOAT3(0, 0, 3);
 		XMVECTOR f = XMLoadFloat3(&forward);
+		f = XMVector3TransformCoord(f, CR2);
 		f = XMVector3TransformCoord(f, CR);
+
 		XMStoreFloat3(&forward, f);
 
 		bull->imp = forward;
@@ -733,13 +748,23 @@ void OnMM(HWND hwnd, int x, int y, UINT keyFlags)
 		holdy = y;
 		return;
 	}
+
+
 	int diffx = holdx - x;
 	int diffy = holdy - y;
+	
+	
 	float angle_y = (float)diffx / 300.0;
 	float angle_x = (float)diffy / 300.0;
+
+	if (cam.w == 1 || cam.w == 1 || cam.s == 1 || cam.d == 1) {
+		angle_x = -angle_x;
+		angle_y = -angle_y;
+	}
+
+
 	cam.rotation.y += angle_y;
 	cam.rotation.x += angle_x;
-
 	int midx = (rc.left + rc.right) / 2;
 	int midy = (rc.top + rc.bottom) / 2;
 	SetCursorPos(midx, midy);
@@ -805,7 +830,6 @@ void OnKeyDown(HWND hwnd, UINT vk, BOOL fDown, int cRepeat, UINT flags)
 	case 68: cam.d = 1;//d
 		break;
 	case 32: //space
-		player_health -= 0.1;
 		break;
 	case 82: //R - Reload
 		player_gun_loaded = false;
@@ -973,7 +997,9 @@ void animate_rocket(float elapsed_microseconds)
 
 
 
-void ShowAmmo(UINT stride, UINT offset, float x, float y) {
+void ShowAmmo(float x, float y) {
+	UINT stride = sizeof(SimpleVertex);
+	UINT offset = 0;
 	XMMATRIX view = cam.get_matrix(&g_View);
 
 	// Update skybox constant buffer
@@ -1018,10 +1044,17 @@ void ShowAmmo(UINT stride, UINT offset, float x, float y) {
 }
 
 
-void DropAmmo(UINT stride, UINT offset, float x, float y, float z) {
-
+billboard DropAmmo(float x, float y, float z, billboard ammodrop) {
 	ammodrop.setPosition(x, y, z);
 
+	ammodrop.ammodropanimation(-cam.position.x, -cam.position.y, -cam.position.z, ammodrop.position.x, ammodrop.position.y, ammodrop.position.z);
+	UINT stride = sizeof(SimpleVertex);
+	UINT offset = 0;
+
+	if (ammodrop.refill) {
+		player_ammo_total += 8;
+		ammodrop.used = true;
+	}
 
 	XMMATRIX view = cam.get_matrix(&g_View);
 
@@ -1057,10 +1090,13 @@ void DropAmmo(UINT stride, UINT offset, float x, float y, float z) {
 	g_pImmediateContext->Draw(enemy_vertex_anz, 0);
 	g_pImmediateContext->OMSetDepthStencilState(ds_off, 1);
 
+	return ammodrop;
 }
 
 
-void playerHealth(UINT stride, UINT offset, float x, float y) {
+void playerHealth(float x, float y, float life) {
+	UINT stride = sizeof(SimpleVertex);
+	UINT offset = 0;
 	XMMATRIX view = cam.get_matrix(&g_View);
 
 	// Update skybox constant buffer
@@ -1082,7 +1118,9 @@ void playerHealth(UINT stride, UINT offset, float x, float y) {
 	XMMATRIX Rx = XMMatrixRotationX(-cam.rotation.x);
 	XMMATRIX Ry = XMMatrixRotationY(-cam.rotation.y);
 	XMMATRIX R_gun = Rx*Ry;
-	M = S*R*T_off*R_gun*T;
+	S = XMMatrixScaling(1.2, 0.3, 0.1);
+	XMMATRIX S2 = XMMatrixScaling(0.01*life, 0.006, 0.01);
+	M = S*S2*R*T_off*R_gun*T;
 
 
 	constantbuffer.World = XMMatrixTranspose(M);
@@ -1103,8 +1141,11 @@ void playerHealth(UINT stride, UINT offset, float x, float y) {
 	g_pImmediateContext->OMSetDepthStencilState(ds_on, 1);
 	g_pImmediateContext->Draw(ammo_vertex_anz, 0);
 }
-void enemyHealth(XMMATRIX &wm, UINT stride, UINT offset, float x, float y, float life) //life between 0 and 1
+
+void enemyHealth(XMMATRIX &wm, float x, float y, float life, billboard enemy) //life between 0 and 1
 {
+	UINT stride = sizeof(SimpleVertex);
+	UINT offset = 0;
 	XMMATRIX view = cam.get_matrix(&g_View);
 
 	// Update skybox constant buffer
@@ -1113,8 +1154,6 @@ void enemyHealth(XMMATRIX &wm, UINT stride, UINT offset, float x, float y, float
 	constantbuffer.Projection = XMMatrixTranspose(g_Projection);
 	//constantbuffer.CameraPos = XMFLOAT4(cam.position.x, cam.position.y, cam.position.z, 1);
 	//render model:
-	float scale = enemy_health / 100;
-	XMMATRIX S = XMMatrixScaling(scale, scale / 2, scale / 2);
 
 	XMMATRIX Ry = XMMatrixRotationY(-cam.rotation.y);
 
@@ -1125,7 +1164,7 @@ void enemyHealth(XMMATRIX &wm, UINT stride, UINT offset, float x, float y, float
 	T = XMMatrixTranslation(enemy.position.x, enemy.position.y + 0.5, enemy.position.z);
 	T_off = XMMatrixTranslation(0, 1.7, 0);		//OFFSET FROM THE CENTE
 	R2 = XMMatrixRotationX(-XM_PIDIV2);
-	S = XMMatrixScaling(1.2, 0.3, 0.1);
+	XMMATRIX S = XMMatrixScaling(1.2, 0.3, 0.1);
 	XMMATRIX S2 = XMMatrixScaling(0.01*life, 0.006, 0.01);
 
 	XMMATRIX WM;
@@ -1152,7 +1191,11 @@ void enemyHealth(XMMATRIX &wm, UINT stride, UINT offset, float x, float y, float
 	g_pImmediateContext->Draw(ammo_vertex_anz, 0);
 }
 
-XMMATRIX RenderEnemy(UINT stride, UINT offset, billboard enemy, float x, float y, float z) {
+billboard RenderEnemy(billboard enemy,float elapsed) {
+	enemy.enemyanimation(-cam.position.x, -cam.position.y, -cam.position.z, elapsed * 2);
+
+	UINT stride = sizeof(SimpleVertex);
+	UINT offset = 0;
 	XMMATRIX view = cam.get_matrix(&g_View);
 	ConstantBuffer constantbuffer2;
 	constantbuffer2.View = XMMatrixTranspose(view);
@@ -1160,19 +1203,18 @@ XMMATRIX RenderEnemy(UINT stride, UINT offset, billboard enemy, float x, float y
 	constantbuffer2.CameraPos = XMFLOAT4(cam.position.x, cam.position.y, cam.position.z, 1);
 
 	//animate_rocket(elapsed);ssssssssss
-	XMMATRIX S2 = XMMatrixScaling(0.008, 0.008, 0.008);
+	XMMATRIX S = XMMatrixScaling(.008, .008, .008);
 
 
 	//S = XMMatrixScaling(10, 10, 10);
 
-	XMMATRIX R2 = XMMatrixRotationX(-XM_PIDIV2);
-	XMMATRIX RY3 = XMMatrixRotationY(XM_PI);
-	XMMATRIX RY4 = XMMatrixRotationY(-XM_PIDIV2);
-	XMMATRIX RY2 = XMMatrixRotationY(cam.rotation.y);
-	XMMATRIX T2 = XMMatrixTranslation(enemy.position.x, enemy.position.y, enemy.position.z);
-	XMMATRIX M2 = S2*R2*RY3*RY4*RY2*T2;
+	XMMATRIX R = XMMatrixRotationX(-XM_PIDIV2);
+	XMMATRIX RY = XMMatrixRotationY(-XM_PI);
+	XMMATRIX Rlook = XMMatrixRotationY(-cam.rotation.y);
+	XMMATRIX T = XMMatrixTranslation(enemy.position.x, enemy.position.y, enemy.position.z);
+	XMMATRIX M = S*R*RY*Rlook*T;
 
-	constantbuffer2.World = XMMatrixTranspose(M2);
+	constantbuffer2.World = XMMatrixTranspose(M);
 	g_pImmediateContext->UpdateSubresource(g_pCBuffer, 0, NULL, &constantbuffer2, 0, 0);
 
 	g_pImmediateContext->VSSetShader(g_pVertexShader, NULL, 0);
@@ -1187,10 +1229,18 @@ XMMATRIX RenderEnemy(UINT stride, UINT offset, billboard enemy, float x, float y
 	g_pImmediateContext->Draw(enemy_vertex_anz, 0);
 	g_pImmediateContext->OMSetDepthStencilState(ds_off, 1);
 
-	return T2;
+	enemyHealth(T, 0, 0.5, enemy.life, enemy);
+	if (enemy.attacking) {
+	enemy.attacking = false;
+	music.play_fx("zombie.wav");
+	player_health -= 0.1;
+	}
+	return enemy;
 }
 //*******************************************************
-void GenUserGun(UINT stride, UINT offset) {
+void renderGun() {
+	UINT stride = sizeof(SimpleVertex);
+	UINT offset = 0;
 	XMMATRIX view = cam.get_matrix(&g_View);
 
 	// Update skybox constant buffer
@@ -1206,7 +1256,14 @@ void GenUserGun(UINT stride, UINT offset) {
 	//S = XMMatrixScaling(10, 10, 10);
 	XMMATRIX T, R, M, T_off;
 	T = XMMatrixTranslation(-cam.position.x, -cam.position.y, -cam.position.z);
-	T_off = XMMatrixTranslation(0.4, -0.4, 1.3);		//OFFSET FROM THE CENTER
+	float zmove = 1;
+
+	if (cam.w == 1 || cam.a == 1 || cam.s == 1 || cam.d == 1) {
+		zmove = (sin(player_gun_movement)+1.3) / 2.7 + 0.3;
+		player_gun_movement += 0.2;
+	}
+
+	T_off = XMMatrixTranslation(0.5, -0.5, zmove);		//OFFSET FROM THE CENTER
 	R = XMMatrixRotationY(-XM_PIDIV2);
 	XMMATRIX Rx = XMMatrixRotationX(-cam.rotation.x);
 	XMMATRIX Ry = XMMatrixRotationY(-cam.rotation.y);
@@ -1235,7 +1292,9 @@ void GenUserGun(UINT stride, UINT offset) {
 
 }
 
-void DisplayHUD(UINT stride, UINT offset) {
+void DisplayHUD() {
+	UINT stride = sizeof(SimpleVertex);
+	UINT offset = 0;
 	//Display ammo on hud
 	float x = -1.0;
 	float y = -0.2;
@@ -1245,11 +1304,34 @@ void DisplayHUD(UINT stride, UINT offset) {
 			x = -1.0;
 		}
 
-		ShowAmmo(stride, offset, x, y);
+		ShowAmmo(x, y);
 		x += 0.05;
 	}
 
-	playerHealth(stride, offset, -1.0, 0.0);
+	playerHealth(-1.0, 0.0, player_health);
+}
+
+void renderBullet(float elapsed) {
+	if (bull != NULL)
+	{
+		UINT stride = sizeof(SimpleVertex);
+		UINT offset = 0;
+		XMMATRIX view = cam.get_matrix(&g_View);
+		XMMATRIX worldmatrix;
+		worldmatrix = XMMatrixIdentity();
+
+		ConstantBuffer constantbuffer;
+		worldmatrix = bull->getmatrix(elapsed, view);
+		g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureBull);
+		constantbuffer.World = XMMatrixTranspose(worldmatrix);
+		constantbuffer.View = XMMatrixTranspose(view);
+		constantbuffer.Projection = XMMatrixTranspose(g_Projection);
+		constantbuffer.info = XMFLOAT4(1, 1, 1, 1);
+		g_pImmediateContext->UpdateSubresource(g_pCBuffer, 0, NULL, &constantbuffer, 0, 0);
+		g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer, &stride, &offset);
+
+		g_pImmediateContext->Draw(12, 0);
+	}
 }
 
 //*******************************************************
@@ -1275,7 +1357,6 @@ void Render()
 	g_pImmediateContext->ClearDepthStencilView(g_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	cam.animation(elapsed, bottom.get_bitmap());
-	ammodrop.ammodropanimation(-cam.position.x, -cam.position.y, -cam.position.z, 1, -1, 5);
 	XMMATRIX view = cam.get_matrix(&g_View);
 
 	XMMATRIX Iview = view;
@@ -1307,62 +1388,28 @@ void Render()
 	front.render_level(g_pImmediateContext, g_pVertexBuffer, &view, &g_Projection, g_pCBuffer);
 	back.render_level(g_pImmediateContext, g_pVertexBuffer, &view, &g_Projection, g_pCBuffer);
 
-
-
-	if (ammodrop.refill) {
-		if (!player_active_reloading) {
-			player_ammo_total += 8;
-			player_active_reloading = true;
+	//////////////// Render AmmoDrops ///////////////
+	for (int amm = 0; amm < AMMODROPCOUNT; amm++) {
+		if (!ammodrop[amm].used) {
+			ammodrop[amm] = DropAmmo(1 + amm, -1, 5, ammodrop[amm]);
 		}
 	}
-	else {
-		player_active_reloading = false;
-		//Create ammo drop
-		worldmatrix = ammodrop.get_matrix_y(view);
-		DropAmmo(stride, offset, 1, -1, 5);
+
+	//////////////// Render Enemies ///////////////
+	for (int num = 0; num < ENEMYCOUNT; num++) {
+
+		if (!enemies[num].used) {
+			enemies[num] = RenderEnemy(enemies[num], elapsed);
+		}
 	}
-
-
-	//Create enemy
-	for (int num = 0; num < total_enemies; num++) {
-		enemies[num].enemyanimation(-cam.position.x, -cam.position.y, -cam.position.z, elapsed * 2);
-		worldmatrix = enemies[num].get_matrix_y(view);
-
-
-		XMMATRIX T = RenderEnemy(stride, offset, enemies[num], 1, -1 + num, 1);
-
-		static float t = 0;
-		float f = (cos(t) + 1.0) / 2.7 + 0.3;
-		t = t + 0.1;
-
-		enemyHealth(T, stride, offset, 0, 0.5, f);
-		/*if (enemies[0].attacking) {
-		music.play_fx("zombie.wav");
-		player_health -= 0.1;
-		}*/
-	}
-
-
+	//////////////// Render Player and Info///////////////
+	
 	//Generate User Gun
-	GenUserGun(stride, offset);
-
+	renderGun();
 	//Display the User HUD
-	DisplayHUD(stride, offset);
+	DisplayHUD();
 
-	if (bull != NULL)
-	{
-		ConstantBuffer constantbuffer;
-		worldmatrix = bull->getmatrix(elapsed, view);
-		g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureBull);
-		constantbuffer.World = XMMatrixTranspose(worldmatrix);
-		constantbuffer.View = XMMatrixTranspose(view);
-		constantbuffer.Projection = XMMatrixTranspose(g_Projection);
-		constantbuffer.info = XMFLOAT4(1, 1, 1, 1);
-		g_pImmediateContext->UpdateSubresource(g_pCBuffer, 0, NULL, &constantbuffer, 0, 0);
-		g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer, &stride, &offset);
-
-		g_pImmediateContext->Draw(12, 0);
-	}
+	renderBullet(elapsed);
 
 	//Player health and life
 	if (player_health <= 0.0) {
@@ -1372,9 +1419,6 @@ void Render()
 		if (player_lives == 0)
 			PostQuitMessage(0);
 	}
-
-
-
 
 	//
 	// Present our back buffer to our front buffer

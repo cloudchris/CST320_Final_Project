@@ -79,6 +79,7 @@ public:
 		scale = 1;
 		attacking = false;
 		refill = false;
+		life = 1.0;
 		transparency = 1;
 	}
 	void setPosition(float xin, float yin, float zin)
@@ -88,14 +89,17 @@ public:
 		z = zin;
 		r = 0;
 		position = XMFLOAT3(xin, yin, zin);
-		attacking = false;
-		refill = false;
-		scale = 1;
-		transparency = 1;
+		
+	}
+
+	void setUsed() {
+		used = true;
 	}
 	XMFLOAT3 position; //obvious
 	float angle;
 	bool attacking, refill;
+	bool used = false;
+	float life;
 	float scale;		//in case it can grow
 	float transparency; //for later use
 
@@ -104,22 +108,7 @@ public:
 	void enemyanimation(int px, int py, int pz, float elapsed_microseconds)
 	{
 		float distance = sqrt(pow(position.x - px, 2) + pow(position.z - pz, 2));
-		float speed = .3;
-		float range = 10;
-		if (distance < 10) {
-			if (position.x <= px) {
-				position.x += speed;
-			}
-			if (position.x >= px) {
-				position.x -= speed;
-			}
-			if (position.z <= pz) {
-				position.z += speed;
-			}
-			if (position.z >= pz) {
-				position.z -= speed;
-			}
-		}
+		
 		 
 		float enemysize = 2;
 		if (
