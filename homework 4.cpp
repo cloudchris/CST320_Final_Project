@@ -40,6 +40,7 @@ int									AMMODROPCOUNT = 10;
 billboard							enemies[1000];
 int									ENEMYCOUNT = 1;
 
+bool								playing_sprinting = false;
 float								player_lives = 5.0;
 float								player_health = 1.0;
 static float						player_gun_movement = 1.3;
@@ -425,7 +426,7 @@ HRESULT InitDevice()
 	//carrier.3ds
 	//hornet.3ds
 	//f15.3ds
-	Load3DS("Glock.3ds", g_pd3dDevice, &g_pVertexBuffer_3ds, &model_vertex_anz);
+	Load3DS("M4a1.3ds", g_pd3dDevice, &g_pVertexBuffer_3ds, &model_vertex_anz);
 	Load3DS("zombie.3ds", g_pd3dDevice, &g_pVertexBuffer_enemy, &enemy_vertex_anz);
 	Load3DS("bullet.3ds", g_pd3dDevice, &g_pVertexBuffer_ammo, &ammo_vertex_anz);
 	Load3DS("box.3ds", g_pd3dDevice, &g_pVertexBuffer_health, &health_vertex_anz);
@@ -451,7 +452,7 @@ HRESULT InitDevice()
 
 
 	// Load the Texture
-	hr = D3DX11CreateShaderResourceViewFromFile(g_pd3dDevice, L"carbon.jpg", NULL, NULL, &g_pTextureRV, NULL);
+	hr = D3DX11CreateShaderResourceViewFromFile(g_pd3dDevice, L"m4_tex.jpg", NULL, NULL, &g_pTextureRV, NULL);
 	if (FAILED(hr))
 		return hr;
 	// Load the Texture
@@ -757,7 +758,7 @@ void OnMM(HWND hwnd, int x, int y, UINT keyFlags)
 	float angle_y = (float)diffx / 300.0;
 	float angle_x = (float)diffy / 300.0;
 
-	if (cam.w == 1 || cam.w == 1 || cam.s == 1 || cam.d == 1) {
+	if (cam.w == 1 || cam.a == 1 || cam.s == 1 || cam.d == 1) {
 		angle_x = -angle_x;
 		angle_y = -angle_y;
 	}
@@ -804,6 +805,9 @@ void OnKeyUp(HWND hwnd, UINT vk, BOOL fDown, int cRepeat, UINT flags)
 		break;
 	case 68: cam.d = 0;//d
 		break;
+	case 16: //shift in
+		cam.sprinting = 0;
+		break;
 	case 32: //space
 		break;
 	case 87: cam.w = 0; //w
@@ -828,6 +832,9 @@ void OnKeyDown(HWND hwnd, UINT vk, BOOL fDown, int cRepeat, UINT flags)
 	case 65:cam.a = 1;//a
 		break;
 	case 68: cam.d = 1;//d
+		break;
+	case 16: //shift in
+		cam.sprinting = 1;
 		break;
 	case 32: //space
 		break;
@@ -1252,24 +1259,30 @@ void renderGun() {
 	XMMATRIX S = XMMatrixScaling(0.001, 0.001, 0.001);
 
 
-	S = XMMatrixScaling(0.1, 0.1, 0.1);
+	S = XMMatrixScaling(0.21, 0.21, 0.21);
 	//S = XMMatrixScaling(10, 10, 10);
 	XMMATRIX T, R, M, T_off;
 	T = XMMatrixTranslation(-cam.position.x, -cam.position.y, -cam.position.z);
-	float zmove = 1;
+	float zmove = 1.3;
 
 	if (cam.w == 1 || cam.a == 1 || cam.s == 1 || cam.d == 1) {
-		zmove = (sin(player_gun_movement)+1.3) / 2.7 + 0.3;
+		float mov = player_gun_movement;
+		if (cam.sprinting) {
+			mov = player_gun_movement * 2;
+		}
+		zmove = (sin(mov)+3) / 3 + 0.2;
 		player_gun_movement += 0.2;
 	}
 
 	T_off = XMMatrixTranslation(0.5, -0.5, zmove);		//OFFSET FROM THE CENTER
-	R = XMMatrixRotationY(-XM_PIDIV2);
+	R = XMMatrixRotationX(XM_PIDIV2);
+	XMMATRIX Rz = XMMatrixRotationZ(-XM_PI);
+
 	XMMATRIX Rx = XMMatrixRotationX(-cam.rotation.x);
 	XMMATRIX Ry = XMMatrixRotationY(-cam.rotation.y);
 	XMMATRIX Rxx = XMMatrixRotationZ(.1);			//NOT SURE WHAT YOU WANT TO DO HERE
 	XMMATRIX R_gun = Rxx*Rx*Ry;
-	M = S*R*T_off*R_gun*T;
+	M = S*R*Rz*T_off*R_gun*T;
 
 
 	constantbuffer.World = XMMatrixTranspose(M);

@@ -518,12 +518,12 @@ class camera
 private:
 
 public:
-	int w, s, a, d, q, e;
+	int w, s, a, d, q, e, sprinting;
 	XMFLOAT3 position, possible_position;
 	XMFLOAT3 rotation;
 	camera()
 	{
-		w = s = a = d = 0;
+		w = s = a = d = sprinting = 0;
 		position = position = XMFLOAT3(0, 0, 0);
 	}
 	void animation(float elapsed_microseconds, bitmap *leveldata)
@@ -549,6 +549,10 @@ public:
 			possible_position.x -= forward.x * speed;
 			possible_position.z -= forward.z * speed;
 			//possible_position.y -= forward.y * speed;
+		}
+		if (sprinting)
+		{
+			speed = speed * 2;
 		}
 		if (s)
 		{
