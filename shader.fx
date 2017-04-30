@@ -81,3 +81,11 @@ color.rgb = texture_color * diffuseLighting + specLighting;
 
 return color;
 }
+
+float4 PS_health(PS_INPUT input) : SV_Target
+{
+	float4 texture_color = txDiffuse.Sample(samLinear, input.Tex);
+	float4 color = texture_color;
+
+	return color;
+}

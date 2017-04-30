@@ -23,6 +23,7 @@ ID3D11Texture2D*                    g_pDepthStencil = NULL;
 ID3D11DepthStencilView*             g_pDepthStencilView = NULL;
 ID3D11VertexShader*                 g_pVertexShader = NULL;
 ID3D11PixelShader*                  g_pPixelShader = NULL;
+ID3D11PixelShader*                  g_pPixelShader_health = NULL;
 ID3D11InputLayout*                  g_pVertexLayout = NULL;
 ID3D11Buffer*                       g_pVertexBuffer = NULL;
 ID3D11Buffer*                       g_pVertexBuffer_sky = NULL;
@@ -377,6 +378,21 @@ HRESULT InitDevice()
 
 	// Create the pixel shader
 	hr = g_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &g_pPixelShader);
+	pPSBlob->Release();
+	if (FAILED(hr))
+		return hr;
+
+
+	pPSBlob = NULL;
+	hr = CompileShaderFromFile(L"shader.fx", "PS_health", "ps_4_0", &pPSBlob);
+	if (FAILED(hr))
+	{
+		MessageBox(NULL,
+			L"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", L"Error", MB_OK);
+		return hr;
+	}
+	//Pixel shader for health
+	hr = g_pd3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &g_pPixelShader_health);
 	pPSBlob->Release();
 	if (FAILED(hr))
 		return hr;
@@ -1037,7 +1053,7 @@ void ShowAmmo(float x, float y) {
 
 	// Render terrain
 	g_pImmediateContext->VSSetShader(g_pVertexShader, NULL, 0);
-	g_pImmediateContext->PSSetShader(g_pPixelShader, NULL, 0);
+	g_pImmediateContext->PSSetShader(g_pPixelShader_health, NULL, 0);
 	g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pCBuffer);
 	g_pImmediateContext->PSSetConstantBuffers(0, 1, &g_pCBuffer);
 	g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureRV);
@@ -1136,7 +1152,7 @@ void playerHealth(float x, float y, float life) {
 
 	// Render terrain
 	g_pImmediateContext->VSSetShader(g_pVertexShader, NULL, 0);
-	g_pImmediateContext->PSSetShader(g_pPixelShader, NULL, 0);
+	g_pImmediateContext->PSSetShader(g_pPixelShader_health, NULL, 0);
 	g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pCBuffer);
 	g_pImmediateContext->PSSetConstantBuffers(0, 1, &g_pCBuffer);
 	g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureA);
@@ -1185,7 +1201,7 @@ void enemyHealth(XMMATRIX &wm, float x, float y, float life, billboard enemy) //
 
 	// Render terrain
 	g_pImmediateContext->VSSetShader(g_pVertexShader, NULL, 0);
-	g_pImmediateContext->PSSetShader(g_pPixelShader, NULL, 0);
+	g_pImmediateContext->PSSetShader(g_pPixelShader_health, NULL, 0);
 	g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pCBuffer);
 	g_pImmediateContext->PSSetConstantBuffers(0, 1, &g_pCBuffer);
 	g_pImmediateContext->PSSetShaderResources(0, 1, &g_pTextureA);
