@@ -439,9 +439,6 @@ HRESULT InitDevice()
 	//load model 3ds file
 
 
-	//carrier.3ds
-	//hornet.3ds
-	//f15.3ds
 	Load3DS("M4a1.3ds", g_pd3dDevice, &g_pVertexBuffer_3ds, &model_vertex_anz);
 	Load3DS("zombie.3ds", g_pd3dDevice, &g_pVertexBuffer_enemy, &enemy_vertex_anz);
 	Load3DS("bullet.3ds", g_pd3dDevice, &g_pVertexBuffer_ammo, &ammo_vertex_anz);
@@ -1214,7 +1211,7 @@ void enemyHealth(XMMATRIX &wm, float x, float y, float life, billboard enemy) //
 	g_pImmediateContext->Draw(ammo_vertex_anz, 0);
 }
 
-billboard RenderEnemy(billboard enemy,float elapsed) {
+billboard RenderEnemy(billboard enemy, float elapsed) {
 	enemy.enemyanimation(-cam.position.x, -cam.position.y, -cam.position.z, elapsed * 2);
 
 	UINT stride = sizeof(SimpleVertex);
@@ -1254,9 +1251,9 @@ billboard RenderEnemy(billboard enemy,float elapsed) {
 
 	enemyHealth(T, 0, 0.5, enemy.life, enemy);
 	if (enemy.attacking) {
-	enemy.attacking = false;
-	music.play_fx("zombie.wav");
-	player_health -= 0.1;
+		enemy.attacking = false;
+		music.play_fx("zombie.wav");
+		player_health -= 0.1;
 	}
 	return enemy;
 }
@@ -1286,7 +1283,7 @@ void renderGun() {
 		if (cam.sprinting) {
 			mov = player_gun_movement * 2;
 		}
-		zmove = (sin(mov)+3) / 3 + 0.2;
+		zmove = (sin(mov) + 3) / 3 + 0.2;
 		player_gun_movement += 0.2;
 	}
 
@@ -1432,7 +1429,7 @@ void Render()
 		}
 	}
 	//////////////// Render Player and Info///////////////
-	
+
 	//Generate User Gun
 	renderGun();
 	//Display the User HUD

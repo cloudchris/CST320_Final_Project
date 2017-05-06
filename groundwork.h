@@ -89,7 +89,7 @@ public:
 		z = zin;
 		r = 0;
 		position = XMFLOAT3(xin, yin, zin);
-		
+
 	}
 
 	void setUsed() {
@@ -108,8 +108,8 @@ public:
 	void enemyanimation(int px, int py, int pz, float elapsed_microseconds)
 	{
 		float distance = sqrt(pow(position.x - px, 2) + pow(position.z - pz, 2));
-		
-		 
+
+
 		float enemysize = 2;
 		if (
 			(px >= (position.x - enemysize) && px <= (position.x + enemysize)) &&
@@ -167,6 +167,7 @@ public:
 		return S*R*T;
 	}
 };
+
 
 //*****************************************
 class bitmap
@@ -589,15 +590,15 @@ public:
 
 
 		//if (position.x < 39 && position.x > -37) {
-		if (red == 255){
+		if (red == 255) {
 			position = possible_position;
 		}
 		else {
-			
+
 		}
-		
+
 		//*/
-		
+
 
 	}
 	XMMATRIX get_matrix(XMMATRIX *view)
@@ -609,6 +610,8 @@ public:
 		return T*(*view)*Ry*Rx;
 	}
 };
+
+
 
 
 
